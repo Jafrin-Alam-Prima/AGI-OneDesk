@@ -284,6 +284,7 @@ const predefinedByHr: (Partial<Kpi> & { name: string })[] = [
   { name: "Consulting Cost Avoided", objectiveId: "obj5", kraId: "kra9", perspective: "Financial", uom: "BDT Lac", direction: "HIGHER_BETTER", srf: "Monthly", weight: 10, kpiType: "VARIABLE", pmType: "BSC" },
   { name: "Stakeholder Satisfaction Score", objectiveId: "obj2", kraId: "kra3", perspective: "Customer", uom: "Score", direction: "HIGHER_BETTER", srf: "Quarterly", weight: 10, kpiType: "NON_VARIABLE", pmType: "BSC" },
   { name: "Process Turnaround Time", objectiveId: "obj3", kraId: "kra5", perspective: "Internal Process", uom: "Days", direction: "LOWER_BETTER", srf: "Monthly", weight: 10, kpiType: "VARIABLE", pmType: "BSC" },
+  { name: "Automation Coverage", objectiveId: "obj3", kraId: "kra5", perspective: "Internal Process", uom: "%", direction: "HIGHER_BETTER", srf: "Quarterly", weight: 15, kpiType: "NON_VARIABLE", pmType: "BSC" },
 ];
 for (const p of predefinedByHr) {
   kpis.push(mkKpi({
@@ -538,11 +539,13 @@ const risks = [
 ];
 
 /* ---------------- Notifications / audit / payslips / contacts ---------------- */
+const pendingForJafrin = kpis.filter((k) => !k.deleted && k.ownerId === "u12" && k.target === 0 && k.actual === 0).length;
 const notifications: Notification[] = [
   { id: "nt1", userId: "u6", title: "4 KPI requests awaiting your review", body: "Employees in Growth Analytics have submitted KPIs.", link: "/kpi-requests", read: false, at: NOW },
   { id: "nt2", userId: "u12", title: "Your KPI was returned", body: "Business Development Initiatives was returned for correction.", link: "/my-kpi", read: false, at: NOW },
   { id: "nt3", userId: "u12", title: "KPI approved", body: "Collection Efficiency was approved.", link: "/my-kpi", read: true, at: NOW },
   { id: "nt4", userId: "u1", title: "Monthly cutoff approaching", body: "The variable income KPI cutoff is 28 October.", link: "/dashboard", read: false, at: NOW },
+  { id: "nt5", userId: "u12", title: `${pendingForJafrin} KPIs need your input`, body: `Please input your Benchmark, Target and Achievement for your ${pendingForJafrin} assigned KPIs (October 2026).`, link: "/my-kpi", read: false, at: NOW },
 ];
 
 const auditLogs: AuditLog[] = [

@@ -230,6 +230,9 @@ export const useStore = create<Store>()(
         };
         set((st) => ({
           kpis: [kpi, ...st.kpis],
+          notifications: s.session.userId && s.session.userId !== kpi.ownerId
+            ? [...st.notifications, { id: uid("nt"), userId: kpi.ownerId, title: "New KPI assigned", body: `${kpi.name} — please input your KPI values.`, link: `/my-kpi/${kpi.id}`, read: false, at: now() }]
+            : st.notifications,
           auditLogs: [pushAudit(st, kpi.ownerId, "KPI_CREATED", "Kpi", kpi.id, `Created ${kpi.name}`), ...st.auditLogs],
         }));
         return kpi;
@@ -479,7 +482,7 @@ export const useStore = create<Store>()(
       audit: (action, entity, entityId, detail) => set((s) => ({ auditLogs: [pushAudit(s, s.session.userId ?? "", action, entity, entityId, detail), ...s.auditLogs] })),
     }),
     {
-      name: "agi-onedesk-v5",
+      name: "agi-onedesk-v6",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => {
         const data: Record<string, unknown> = {};
