@@ -134,6 +134,7 @@ export const objectives: Objective[] = [
   { id: "obj2", name: "Customer Excellence", perspective: "Customer" },
   { id: "obj3", name: "Operational Excellence", perspective: "Internal Process" },
   { id: "obj4", name: "People & Culture", perspective: "Learning & Growth" },
+  { id: "obj5", name: "Reduce external research/consulting cost by executing suitable research, analytics and intelligence work in-house.", perspective: "Financial" },
 ];
 
 export const kras: Kra[] = [
@@ -145,6 +146,7 @@ export const kras: Kra[] = [
   { id: "kra6", objectiveId: "obj3", name: "Quality & Compliance" },
   { id: "kra7", objectiveId: "obj4", name: "Employee Engagement" },
   { id: "kra8", objectiveId: "obj4", name: "Capability Building" },
+  { id: "kra9", objectiveId: "obj5", name: "In-House Cost Saving" },
 ];
 
 /* ---------------- KPIs ---------------- */
@@ -165,6 +167,15 @@ function mkKpi(p: Partial<Kpi> & { ownerId: string; approverId: string; name: st
     perspective: p.perspective ?? "Financial",
     uom: p.uom ?? "BDT",
     direction: p.direction ?? "HIGHER_BETTER",
+    srf: p.srf,
+    pmType: p.pmType ?? "BSC",
+    bscPerspective: p.bscPerspective ?? p.perspective ?? "Financial",
+    evidenceLink: p.evidenceLink,
+    dataSource: p.dataSource,
+    kpiCharter: p.kpiCharter,
+    kpiDriver: p.kpiDriver,
+    showOnDashboard: p.showOnDashboard ?? true,
+    kpiType: p.kpiType ?? "NON_VARIABLE",
     weight: p.weight ?? 20,
     benchmark: p.benchmark,
     target,
@@ -185,7 +196,7 @@ function mkKpi(p: Partial<Kpi> & { ownerId: string; approverId: string; name: st
 
 function salesKpis(owner: string, approver: string, month: number, base: number): Kpi[] {
   return [
-    mkKpi({ ownerId: owner, approverId: approver, name: "Sales Target vs Achievement (AOPL)", kraId: "kra1", objectiveId: "obj1", perspective: "Financial", uom: "MT", weight: 40, target: base, actual: Math.round(base * 0.9), remarks: "Regional demand softened in the last week.", periodMonth: month }),
+    mkKpi({ ownerId: owner, approverId: approver, name: "Sales Target vs Achievement (AOPL)", kraId: "kra1", objectiveId: "obj1", perspective: "Financial", uom: "MT", weight: 40, target: base, actual: Math.round(base * 0.9), remarks: "Regional demand softened in the last week.", periodMonth: month, kpiType: "VARIABLE", srf: "Monthly" }),
     mkKpi({ ownerId: owner, approverId: approver, name: "New Dealer Acquisition", kraId: "kra4", objectiveId: "obj2", perspective: "Customer", uom: "Count", weight: 25, target: 12, actual: 13, remarks: "Added 1 dealer above plan in Rajshahi region.", periodMonth: month }),
     mkKpi({ ownerId: owner, approverId: approver, name: "Business Development Initiatives", kraId: "kra2", objectiveId: "obj1", perspective: "Financial", uom: "%", weight: 20, target: 100, actual: 88, remarks: "Forecasting and territory plans completed.", periodMonth: month }),
     mkKpi({ ownerId: owner, approverId: approver, name: "Collection Efficiency", kraId: "kra5", objectiveId: "obj3", perspective: "Internal Process", uom: "%", weight: 15, target: 95, actual: 97, remarks: "Improved due to follow-up cadence.", periodMonth: month }),
@@ -240,6 +251,32 @@ for (const [owner, approver, name, weight, target, actual] of others) {
     periodMonth: 10,
   }));
 }
+
+/* ---------------- HR-defined KPIs for the employee demo (assigned to reference employee Jafrin) ---------------- */
+kpis.push(mkKpi({
+  id: "kpi-housavings", ownerId: "u12", approverId: "u6",
+  name: "BDT Lac In-House Cost Saving", objectiveId: "obj5", kraId: "kra9",
+  perspective: "Financial", bscPerspective: "Financial",
+  uom: "BDT Lac", direction: "HIGHER_BETTER", srf: "Monthly", weight: 10,
+  kpiType: "VARIABLE", pmType: "BSC",
+  benchmark: 12, target: 20, actual: 14,
+  evidenceLink: "https://anwargroup.sharepoint.com/sites/kpi/inhouse-cost-saving-oct.xlsx",
+  dataSource: "Finance ERP — Cost Centre report",
+  kpiCharter: "Cost Optimisation", kpiDriver: "In-house capability",
+  remarks: "Consulting spend brought in-house this month.",
+  status: "APPROVED", periodMonth: 10, periodYear: 2026,
+}));
+kpis.push(mkKpi({
+  id: "kpi-research", ownerId: "u12", approverId: "u6",
+  name: "In-House Research Deliverables", objectiveId: "obj5", kraId: "kra9",
+  perspective: "Financial", bscPerspective: "Financial",
+  uom: "Count", direction: "HIGHER_BETTER", srf: "Monthly", weight: 5,
+  kpiType: "NON_VARIABLE", pmType: "BSC",
+  benchmark: 4, target: 6, actual: 5,
+  dataSource: "Research team weekly tracker",
+  kpiCharter: "Capability Building", kpiDriver: "Research throughput",
+  status: "APPROVED", periodMonth: 10, periodYear: 2026,
+}));
 
 /* ---------------- Evidence / versions / decisions (reference KPIs) ---------------- */
 import type { EvidenceFile } from "./types";

@@ -1,17 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Target, Search } from "lucide-react";
+import Link from "next/link";
+import { Plus, Target, Search, Upload } from "lucide-react";
 import { useStore, useCurrentUser } from "@/lib/store";
 import { PageHeader } from "@/components/ui/primitives";
 import { KpiCard } from "@/components/kpi/kpi-card";
-import { KpiForm } from "@/components/kpi/kpi-form";
 import { TextInput } from "@/components/ui/field";
 
 export default function MyKpiPage() {
   const me = useCurrentUser();
   const kpis = useStore((s) => s.kpis);
-  const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("ALL");
 
@@ -35,14 +34,19 @@ export default function MyKpiPage() {
     return true;
   });
 
-  const canCreate = me && me.role !== "SUPER_ADMIN";
+  const canCreate = !!me;
 
   return (
     <div>
       <PageHeader
         title="My KPI"
         subtitle={`${counts.draft} draft · ${counts.review} in review · ${counts.approved} approved · ${counts.returned} returned for correction`}
-        action={canCreate ? <button className="btn-primary" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Create KPI</button> : undefined}
+        action={canCreate ? (
+          <div className="flex items-center gap-2">
+            <Link href="/my-kpi/bulk" className="btn-secondary"><Upload className="h-4 w-4" /> Bulk Upload</Link>
+            <Link href="/my-kpi/create" className="btn-primary"><Plus className="h-4 w-4" /> Create KPI</Link>
+          </div>
+        ) : undefined}
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -70,16 +74,16 @@ export default function MyKpiPage() {
 
         <div className="grid max-h-[62vh] grid-cols-1 gap-4 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
           {canCreate && status === "ALL" && !q ? (
-            <button
-              onClick={() => setOpen(true)}
+            <Link
+              href="/my-kpi/create"
               className="flex min-h-[230px] flex-col items-center justify-center rounded-xl border-2 border-dashed border-brand-200 bg-brand-50/40 p-6 text-center transition-colors hover:border-brand-400 hover:bg-brand-50 sm:order-last xl:order-last"
             >
               <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white text-brand-600 shadow-sm">
                 <Plus className="h-6 w-6" />
               </span>
               <span className="text-sm font-semibold text-brand-700">Create KPI</span>
-              <span className="mt-1 max-w-[200px] text-xs text-ink-500">Score your major tasks for the month. Save as Draft or Submit to your Department Head.</span>
-            </button>
+              <span className="mt-1 max-w-[200px] text-xs text-ink-500">Add one or more KPIs for the period and Save to send them for approval.</span>
+            </Link>
           ) : null}
 
           {filtered.map((k) => <KpiCard key={k.id} kpi={k} />)}
@@ -93,8 +97,6 @@ export default function MyKpiPage() {
           ) : null}
         </div>
       </div>
-
-      {canCreate ? <KpiForm open={open} onClose={() => setOpen(false)} mode="create" /> : null}
     </div>
   );
 }

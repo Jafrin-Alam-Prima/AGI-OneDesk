@@ -18,6 +18,11 @@ const ALL: Role[] = ["EMPLOYEE", "DEPT_HEAD", "HR_ADMIN", "FINANCE_ADMIN", "AUDI
 const HEADS: Role[] = ["DEPT_HEAD", "HR_ADMIN", "FINANCE_ADMIN", "AUDIT_ADMIN", "SYS_ADMIN", "SUPER_ADMIN"];
 const STAGE: Role[] = ["HR_ADMIN", "FINANCE_ADMIN", "AUDIT_ADMIN", "SUPER_ADMIN"];
 const ADMIN: Role[] = ["SYS_ADMIN", "SUPER_ADMIN"];
+/** Roles allowed to define/edit the HR-controlled KPI fields (BSC, Objective, KPI, KPI Type, UOM, Direction, SRF, Weight). */
+export const KPI_ADMIN_ROLES: Role[] = ["HR_ADMIN", "SYS_ADMIN", "SUPER_ADMIN"];
+export function canEditKpiDefinition(role?: Role): boolean {
+  return !!role && KPI_ADMIN_ROLES.includes(role);
+}
 
 export const NAV: NavGroup[] = [
   {

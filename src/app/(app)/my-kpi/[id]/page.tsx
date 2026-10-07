@@ -6,6 +6,7 @@ import { useState } from "react";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { useStore, useCurrentUser } from "@/lib/store";
 import { KpiDetailView } from "@/components/kpi/kpi-detail";
+import { KpiEntrySection } from "@/components/kpi/kpi-entry";
 import { KpiForm } from "@/components/kpi/kpi-form";
 import { EmptyState } from "@/components/ui/primitives";
 
@@ -38,6 +39,7 @@ export default function KpiDetailPage() {
           </button>
         ) : null}
       </div>
+      <KpiEntrySection kpi={kpi} />
       <KpiDetailView kpi={kpi} />
       {canEdit ? <KpiForm open={open} onClose={() => setOpen(false)} existing={kpi} mode={kpi.status === "DRAFT" ? "edit" : "resubmit"} /> : null}
     </div>

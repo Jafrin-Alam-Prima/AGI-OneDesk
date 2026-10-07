@@ -202,6 +202,19 @@ export const useStore = create<Store>()(
           uom: input.uom ?? "BDT",
           direction: input.direction ?? "HIGHER_BETTER",
           srf: input.srf,
+          pmType: input.pmType,
+          bscPerspective: input.bscPerspective,
+          aggregationType: input.aggregationType,
+          kpiMeasurement: input.kpiMeasurement,
+          kpiFormat: input.kpiFormat,
+          targetFrequency: input.targetFrequency,
+          frequencyValue: input.frequencyValue,
+          evidenceLink: input.evidenceLink,
+          dataSource: input.dataSource,
+          kpiCharter: input.kpiCharter,
+          kpiDriver: input.kpiDriver,
+          showOnDashboard: input.showOnDashboard,
+          kpiType: input.kpiType,
           weight: input.weight ?? 0,
           benchmark: input.benchmark,
           target: input.target ?? 0,
@@ -466,7 +479,7 @@ export const useStore = create<Store>()(
       audit: (action, entity, entityId, detail) => set((s) => ({ auditLogs: [pushAudit(s, s.session.userId ?? "", action, entity, entityId, detail), ...s.auditLogs] })),
     }),
     {
-      name: "agi-onedesk-v2",
+      name: "agi-onedesk-v3",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => {
         const data: Record<string, unknown> = {};

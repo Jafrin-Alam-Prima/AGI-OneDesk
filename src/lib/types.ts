@@ -133,6 +133,20 @@ export interface Kpi {
   uom: string; // BDT, %, count, days
   direction: KpiDirection;
   srf?: string;
+  /* PeopleDesk parity fields */
+  pmType?: "BSC" | "ESG" | "OKR";
+  bscPerspective?: string;
+  aggregationType?: string;
+  kpiMeasurement?: string;
+  kpiFormat?: string;
+  targetFrequency?: string;
+  frequencyValue?: number;
+  evidenceLink?: string;
+  dataSource?: string;
+  kpiCharter?: string;
+  kpiDriver?: string;
+  showOnDashboard?: boolean;
+  kpiType?: "VARIABLE" | "NON_VARIABLE";
   weight: number; // percent
   benchmark?: number;
   target: number;

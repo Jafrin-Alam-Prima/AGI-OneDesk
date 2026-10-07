@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { Clock, Eye } from "lucide-react";
-import { KpiStatusBadge } from "@/components/ui/primitives";
+import { KpiStatusBadge, Badge } from "@/components/ui/primitives";
 import { Tracker } from "./tracker";
+import { kpiTypeLabel } from "./kpi-entry";
 import { achievement, calculatedScore } from "@/lib/calc";
 import { monthName, num } from "@/lib/utils";
 import type { Kpi } from "@/lib/types";
@@ -26,9 +27,10 @@ export function KpiCard({ kpi }: { kpi: Kpi }) {
         <p className="line-clamp-2 text-sm font-semibold text-ink-900" title={kpi.name}>{kpi.name}</p>
         <KpiStatusBadge status={kpi.status} />
       </div>
-      <p className="mt-1 text-xs text-ink-500">
-        {kpi.category === "PROJECT" ? "Project KPI" : "People & Culture"} · Weight {kpi.weight}%
-      </p>
+      <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-ink-500">
+        <Badge tone={kpi.kpiType === "VARIABLE" ? "purple" : "blue"}>{kpiTypeLabel(kpi.kpiType)}</Badge>
+        <span>{kpi.category === "PROJECT" ? "Project KPI" : "People & Culture"} · Weight {kpi.weight}%</span>
+      </div>
 
       <div className="mt-3 grid grid-cols-3 gap-2 rounded-lg bg-ink-50 px-3 py-2">
         <div>

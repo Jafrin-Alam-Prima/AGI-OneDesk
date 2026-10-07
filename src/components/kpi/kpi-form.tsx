@@ -7,6 +7,7 @@ import { Field, FormGrid, Select, TextArea, TextInput } from "@/components/ui/fi
 import { useToast } from "@/components/ui/toast";
 import { useStore, useCurrentUser } from "@/lib/store";
 import { deptHeads } from "@/lib/selectors";
+import { canEditKpiDefinition } from "@/lib/navigation";
 import { achievement, calculatedScore } from "@/lib/calc";
 import { num, sha256Hex, cn } from "@/lib/utils";
 import type { Kpi, KpiCategory, KpiDirection } from "@/lib/types";
@@ -14,6 +15,7 @@ import type { Kpi, KpiCategory, KpiDirection } from "@/lib/types";
 interface FormState {
   name: string;
   category: KpiCategory;
+  kpiType: NonNullable<Kpi["kpiType"]>;
   objectiveId: string;
   kraId: string;
   uom: string;
@@ -51,10 +53,12 @@ export function KpiForm({
   const [busy, setBusy] = useState(false);
 
   const heads = useMemo(() => (me ? deptHeads(users, me.departmentId) : []), [users, me]);
+  const lockDef = !canEditKpiDefinition(me?.role);
 
   const [f, setF] = useState<FormState>(() => ({
     name: existing?.name ?? "",
     category: existing?.category ?? "PROJECT",
+    kpiType: existing?.kpiType ?? "NON_VARIABLE",
     objectiveId: existing?.objectiveId ?? objectives[0]?.id ?? "",
     kraId: existing?.kraId ?? kras[0]?.id ?? "",
     uom: existing?.uom ?? "BDT",
@@ -112,7 +116,7 @@ export function KpiForm({
     if (!me) return;
     if (mode === "create") {
       const kpi = createKpi({
-        ownerId: me.id, name: f.name.trim(), category: f.category,
+        ownerId: me.id, name: f.name.trim(), category: f.category, kpiType: f.kpiType,
         objectiveId: f.objectiveId, kraId: f.kraId, uom: f.uom, direction: f.direction, srf: f.srf || undefined,
         target, actual, weight, benchmark: f.benchmark ? Number(f.benchmark) : undefined,
         remarks: f.remarks, periodMonth: f.periodMonth, periodYear: f.periodYear, approverId: f.approverId,
@@ -121,7 +125,7 @@ export function KpiForm({
       push("success", "KPI saved as draft.");
     } else if (existing) {
       updateKpi(existing.id, {
-        name: f.name.trim(), category: f.category, objectiveId: f.objectiveId, kraId: f.kraId,
+        name: f.name.trim(), category: f.category, kpiType: f.kpiType, objectiveId: f.objectiveId, kraId: f.kraId,
         uom: f.uom, direction: f.direction, srf: f.srf || undefined, target, actual, weight,
         benchmark: f.benchmark ? Number(f.benchmark) : undefined, remarks: f.remarks,
         periodMonth: f.periodMonth, periodYear: f.periodYear, approverId: f.approverId,
@@ -136,7 +140,7 @@ export function KpiForm({
     if (!me) return;
     if (mode === "create") {
       const kpi = createKpi({
-        ownerId: me.id, name: f.name.trim(), category: f.category,
+        ownerId: me.id, name: f.name.trim(), category: f.category, kpiType: f.kpiType,
         objectiveId: f.objectiveId, kraId: f.kraId, uom: f.uom, direction: f.direction, srf: f.srf || undefined,
         target, actual, weight, benchmark: f.benchmark ? Number(f.benchmark) : undefined,
         remarks: f.remarks, periodMonth: f.periodMonth, periodYear: f.periodYear, approverId: f.approverId,
@@ -147,7 +151,7 @@ export function KpiForm({
     } else if (existing) {
       persistEvidence(existing.id);
       resubmitKpi(existing.id, {
-        name: f.name.trim(), category: f.category, objectiveId: f.objectiveId, kraId: f.kraId,
+        name: f.name.trim(), category: f.category, kpiType: f.kpiType, objectiveId: f.objectiveId, kraId: f.kraId,
         uom: f.uom, direction: f.direction, srf: f.srf || undefined, target, actual, weight,
         benchmark: f.benchmark ? Number(f.benchmark) : undefined, remarks: f.remarks,
       });
@@ -181,38 +185,44 @@ export function KpiForm({
       }
     >
       <Field label="KPI" required error={errors.name}>
-        <TextInput value={f.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Sales Target vs Achievement (AOPL)" />
+        <TextInput value={f.name} disabled={lockDef} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Sales Target vs Achievement (AOPL)" />
       </Field>
 
       <FormGrid>
         <Field label="KPI Category" required>
-          <Select value={f.category} onChange={(e) => set("category", e.target.value as KpiCategory)}>
+          <Select value={f.category} disabled={lockDef} onChange={(e) => set("category", e.target.value as KpiCategory)}>
             <option value="PROJECT">Project KPI</option>
             <option value="PEOPLE_CULTURE">People &amp; Culture KPI</option>
           </Select>
         </Field>
+        <Field label="KPI Type" required>
+          <Select value={f.kpiType} disabled={lockDef} onChange={(e) => set("kpiType", e.target.value as NonNullable<Kpi["kpiType"]>)}>
+            <option value="VARIABLE">Variable KPI</option>
+            <option value="NON_VARIABLE">Non-Variable KPI</option>
+          </Select>
+        </Field>
         <Field label="Unit of Measure">
-          <Select value={f.uom} onChange={(e) => set("uom", e.target.value)}>
+          <Select value={f.uom} disabled={lockDef} onChange={(e) => set("uom", e.target.value)}>
             {UOMS.map((u) => <option key={u} value={u}>{u}</option>)}
           </Select>
         </Field>
         <Field label="Objective">
-          <Select value={f.objectiveId} onChange={(e) => set("objectiveId", e.target.value)}>
+          <Select value={f.objectiveId} disabled={lockDef} onChange={(e) => set("objectiveId", e.target.value)}>
             {objectives.map((o) => <option key={o.id} value={o.id}>{o.name} ({o.perspective})</option>)}
           </Select>
         </Field>
         <Field label="Key Result Area (KRA)">
-          <Select value={f.kraId} onChange={(e) => set("kraId", e.target.value)}>
+          <Select value={f.kraId} disabled={lockDef} onChange={(e) => set("kraId", e.target.value)}>
             {kras.filter((k) => !f.objectiveId || k.objectiveId === f.objectiveId).map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
           </Select>
         </Field>
         <Field label="KPI Period (Month)">
-          <Select value={f.periodMonth} onChange={(e) => set("periodMonth", Number(e.target.value))}>
+          <Select value={f.periodMonth} disabled={lockDef} onChange={(e) => set("periodMonth", Number(e.target.value))}>
             {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => <option key={m} value={m}>{new Date(2026, m - 1, 1).toLocaleString("en", { month: "long" })}</option>)}
           </Select>
         </Field>
         <Field label="Period Year">
-          <Select value={f.periodYear} onChange={(e) => set("periodYear", Number(e.target.value))}>
+          <Select value={f.periodYear} disabled={lockDef} onChange={(e) => set("periodYear", Number(e.target.value))}>
             {[2025, 2026, 2027].map((y) => <option key={y} value={y}>{y}</option>)}
           </Select>
         </Field>
@@ -226,7 +236,7 @@ export function KpiForm({
           <TextInput type="number" value={f.actual} onChange={(e) => set("actual", e.target.value)} invalid={!!errors.actual} />
         </Field>
         <Field label="KPI Weight (%)" required error={errors.weight}>
-          <TextInput type="number" value={f.weight} onChange={(e) => set("weight", e.target.value)} invalid={!!errors.weight} />
+          <TextInput type="number" value={f.weight} disabled={lockDef} onChange={(e) => set("weight", e.target.value)} invalid={!!errors.weight} />
         </Field>
       </FormGrid>
 
@@ -244,13 +254,13 @@ export function KpiForm({
 
       <FormGrid>
         <Field label="KPI Direction">
-          <Select value={f.direction} onChange={(e) => set("direction", e.target.value as KpiDirection)}>
+          <Select value={f.direction} disabled={lockDef} onChange={(e) => set("direction", e.target.value as KpiDirection)}>
             <option value="HIGHER_BETTER">Higher is better</option>
             <option value="LOWER_BETTER">Lower is better</option>
           </Select>
         </Field>
         <Field label="SRF" hint="Strategic Result Factor (optional)">
-          <TextInput value={f.srf} onChange={(e) => set("srf", e.target.value)} placeholder="e.g. Growth" />
+          <TextInput value={f.srf} disabled={lockDef} onChange={(e) => set("srf", e.target.value)} placeholder="e.g. Growth" />
         </Field>
       </FormGrid>
 
@@ -288,7 +298,7 @@ export function KpiForm({
       </Field>
 
       <Field label="Approval Person" required error={errors.approverId} hint="Only Department Heads of your department are listed.">
-        <Select value={f.approverId} onChange={(e) => set("approverId", e.target.value)} invalid={!!errors.approverId}>
+        <Select value={f.approverId} disabled={lockDef} onChange={(e) => set("approverId", e.target.value)} invalid={!!errors.approverId}>
           <option value="">Select approval person…</option>
           {heads.map((h) => <option key={h.id} value={h.id}>{h.fullName} — {h.designation}</option>)}
         </Select>
