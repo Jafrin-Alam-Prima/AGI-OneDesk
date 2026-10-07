@@ -7,6 +7,7 @@ import { useStore, useCurrentUser } from "@/lib/store";
 import { PageHeader } from "@/components/ui/primitives";
 import { canEditKpiDefinition } from "@/lib/navigation";
 import { KpiCard } from "@/components/kpi/kpi-card";
+import { KpiEntryTable } from "@/components/kpi/kpi-entry-table";
 import { TextInput } from "@/components/ui/field";
 
 export default function MyKpiPage() {
@@ -84,6 +85,15 @@ export default function MyKpiPage() {
         </select>
       </div>
 
+      {!canCreate && onlyPending ? (
+        <div className="card overflow-hidden">
+          <div className="flex items-center justify-between border-b border-ink-100 px-5 py-3">
+            <h3 className="text-sm font-semibold text-ink-700">Input KPI</h3>
+            <p className="text-xs text-ink-400">{filtered.length} KPI{filtered.length === 1 ? "" : "s"} to input · HR columns are read-only</p>
+          </div>
+          {filtered.length ? <KpiEntryTable kpis={filtered} /> : <p className="p-5 text-sm text-ink-500">Nothing left to input — all caught up.</p>}
+        </div>
+      ) : (
       <div className="card p-4">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-ink-700">KPI cards</h3>
@@ -115,6 +125,7 @@ export default function MyKpiPage() {
           ) : null}
         </div>
       </div>
+      )}
     </div>
   );
 }
