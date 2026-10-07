@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Download, Upload, FileSpreadsheet, CheckCircle2, AlertTriangle, Save, RotateCcw } from "lucide-react";
 import { useStore, useCurrentUser } from "@/lib/store";
 import { deptHeads } from "@/lib/selectors";
+import { canEditKpiDefinition } from "@/lib/navigation";
 import { useToast } from "@/components/ui/toast";
 import { monthName, download, cn } from "@/lib/utils";
 import type { Kpi, KpiDirection } from "@/lib/types";
@@ -92,6 +93,7 @@ export default function BulkKpiUploadPage() {
 
   const isAdmin = !!me && ADMIN_ROLES.includes(me.role);
   const isHead = !!me && me.role === "DEPT_HEAD";
+  const canBulk = canEditKpiDefinition(me?.role);
   const deptNameFor = (id?: string) => departments.find((d) => d.id === id)?.name ?? "";
 
   const scopedKpis = useMemo(() => {
@@ -275,10 +277,16 @@ export default function BulkKpiUploadPage() {
         </div>
         <div className="flex items-center gap-2">
           <button className="btn-secondary" onClick={downloadTemplate}><Download className="h-4 w-4" /> Download Template</button>
-          <button className="btn-primary" onClick={() => fileRef.current?.click()}><Upload className="h-4 w-4" /> Upload CSV</button>
+          <button className="btn-primary" disabled={!canBulk} onClick={() => fileRef.current?.click()}><Upload className="h-4 w-4" /> Upload CSV</button>
           <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => onFile(e.target.files)} />
         </div>
       </div>
+
+      {!canBulk ? (
+        <p className="mb-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          <FileSpreadsheet className="mt-0.5 h-3.5 w-3.5 shrink-0" /> Bulk upload is an HR/Admin action — the HR-defined fields (BSC, Objective, KPI, UOM, Direction, SRF, Weight) can only be changed by HR. You can still view the app as normal.
+        </p>
+      ) : null}
 
       <div className="card card-pad mb-4">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -324,7 +332,7 @@ export default function BulkKpiUploadPage() {
             </div>
             <div className="flex items-center gap-2">
               <button className="btn-secondary btn-sm" onClick={() => { setRows([]); setFileName(""); }}><RotateCcw className="h-3.5 w-3.5" /> Clear</button>
-              <button className="btn-primary" disabled={counts.error > 0} onClick={commit}><Save className="h-4 w-4" /> Commit {counts.update + counts.create} rows</button>
+              <button className="btn-primary" disabled={!canBulk || counts.error > 0} onClick={commit}><Save className="h-4 w-4" /> Commit {counts.update + counts.create} rows</button>
             </div>
           </div>
 

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Trash2, Save, ChevronDown, ChevronUp, Info } from "lucide-react";
 import { useStore, useCurrentUser } from "@/lib/store";
 import { deptHeads } from "@/lib/selectors";
+import { canEditKpiDefinition } from "@/lib/navigation";
 import { achievement, calculatedScore } from "@/lib/calc";
 import { Avatar } from "@/components/ui/primitives";
 import { useToast } from "@/components/ui/toast";
@@ -88,6 +89,7 @@ export default function CreateIndividualKpiPage() {
   const submitKpi = useStore((s) => s.submitKpi);
 
   const canPickEmployee = !!me && ["HR_ADMIN", "SYS_ADMIN", "SUPER_ADMIN", "DEPT_HEAD"].includes(me.role);
+  const lockDef = !canEditKpiDefinition(me?.role);
   const employeeOptions = useMemo(
     () => (canPickEmployee ? users.filter((u) => u.status === "ACTIVE") : me ? [me] : []),
     [canPickEmployee, users, me]
@@ -192,6 +194,12 @@ export default function CreateIndividualKpiPage() {
           </button>
         </div>
       </div>
+
+      {lockDef ? (
+        <p className="mb-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" /> BSC, Objective, KPI, KPI Type, UOM, KPI Direction, SRF and Weight are set by HR and are read-only here. Add your Benchmark, Target, Achievement and other details.
+        </p>
+      ) : null}
 
       {/* Sheet context */}
       <div className="card card-pad mb-4">
@@ -309,29 +317,29 @@ export default function CreateIndividualKpiPage() {
                         <span className="chip bg-brand-100 text-brand-700">{obj?.perspective ?? "BSC"}</span>
                       </td>
                       <td className="px-3 py-3">
-                        <select className="input min-w-[170px]" value={r.objectiveId} onChange={(e) => patchRow(r.key, { objectiveId: e.target.value })}>
+                        <select className={cn("input min-w-[170px]", lockDef && readonly)} disabled={lockDef} value={r.objectiveId} onChange={(e) => patchRow(r.key, { objectiveId: e.target.value })}>
                           <option value="">Select…</option>
                           {objectives.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
                         </select>
                       </td>
                       <td className="px-3 py-3">
-                        <input className={cn("input min-w-[220px]", err.name && "input-error")} value={r.name} onChange={(e) => patchRow(r.key, { name: e.target.value })} placeholder="KPI name" />
+                        <input className={cn("input min-w-[220px]", err.name && !lockDef && "input-error", lockDef && readonly)} disabled={lockDef} value={r.name} onChange={(e) => patchRow(r.key, { name: e.target.value })} placeholder="KPI name" />
                       </td>
                       <td className="px-3 py-3">
-                        <select className="input min-w-[100px]" value={r.uom} onChange={(e) => patchRow(r.key, { uom: e.target.value })}>
+                        <select className={cn("input min-w-[100px]", lockDef && readonly)} disabled={lockDef} value={r.uom} onChange={(e) => patchRow(r.key, { uom: e.target.value })}>
                           {UOMS.map((u) => <option key={u} value={u}>{u}</option>)}
                         </select>
                       </td>
                       <td className="px-3 py-3">
-                        <select className="input min-w-[150px]" value={r.direction} onChange={(e) => patchRow(r.key, { direction: e.target.value as KpiDirection })}>
+                        <select className={cn("input min-w-[150px]", lockDef && readonly)} disabled={lockDef} value={r.direction} onChange={(e) => patchRow(r.key, { direction: e.target.value as KpiDirection })}>
                           {DIRECTIONS.map((d) => <option key={d.v} value={d.v}>{d.l}</option>)}
                         </select>
                       </td>
                       <td className="px-3 py-3">
-                        <input className="input min-w-[110px]" value={r.srf} onChange={(e) => patchRow(r.key, { srf: e.target.value })} placeholder="e.g. Growth" />
+                        <input className={cn("input min-w-[110px]", lockDef && readonly)} disabled={lockDef} value={r.srf} onChange={(e) => patchRow(r.key, { srf: e.target.value })} placeholder="e.g. Growth" />
                       </td>
                       <td className="px-3 py-3">
-                        <input type="number" className={cn("input w-24", err.weight && "input-error")} value={r.weight} onChange={(e) => patchRow(r.key, { weight: e.target.value })} />
+                        <input type="number" className={cn("input w-24", err.weight && !lockDef && "input-error", lockDef && readonly)} disabled={lockDef} value={r.weight} onChange={(e) => patchRow(r.key, { weight: e.target.value })} />
                       </td>
                       <td className="px-3 py-3">
                         <input type="number" className="input w-24" value={r.benchmark} onChange={(e) => patchRow(r.key, { benchmark: e.target.value })} />
@@ -368,41 +376,41 @@ export default function CreateIndividualKpiPage() {
                           <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
                             <div>
                               <label className="label">KPI Type</label>
-                              <select className="input" value={r.kpiType} onChange={(e) => patchRow(r.key, { kpiType: e.target.value as NonNullable<Kpi["kpiType"]> })}>
+                              <select className={cn("input", lockDef && readonly)} disabled={lockDef} value={r.kpiType} onChange={(e) => patchRow(r.key, { kpiType: e.target.value as NonNullable<Kpi["kpiType"]> })}>
                                 <option value="VARIABLE">Variable KPI</option>
                                 <option value="NON_VARIABLE">Non-Variable KPI</option>
                               </select>
                             </div>
                             <div>
                               <label className="label">Aggregation Type</label>
-                              <select className="input" value={r.aggregationType} onChange={(e) => patchRow(r.key, { aggregationType: e.target.value })}>
+                              <select className={cn("input", lockDef && readonly)} disabled={lockDef} value={r.aggregationType} onChange={(e) => patchRow(r.key, { aggregationType: e.target.value })}>
                                 <option value="">Select…</option>
                                 {AGGREGATION_TYPES.map((x) => <option key={x} value={x}>{x}</option>)}
                               </select>
                             </div>
                             <div>
                               <label className="label">KPI Measurement</label>
-                              <select className="input" value={r.kpiMeasurement} onChange={(e) => patchRow(r.key, { kpiMeasurement: e.target.value })}>
+                              <select className={cn("input", lockDef && readonly)} disabled={lockDef} value={r.kpiMeasurement} onChange={(e) => patchRow(r.key, { kpiMeasurement: e.target.value })}>
                                 <option value="">Select…</option>
                                 {UOMS.map((x) => <option key={x} value={x}>{x}</option>)}
                               </select>
                             </div>
                             <div>
                               <label className="label">KPI Format</label>
-                              <select className="input" value={r.kpiFormat} onChange={(e) => patchRow(r.key, { kpiFormat: e.target.value })}>
+                              <select className={cn("input", lockDef && readonly)} disabled={lockDef} value={r.kpiFormat} onChange={(e) => patchRow(r.key, { kpiFormat: e.target.value })}>
                                 <option value="">Select…</option>
                                 {KPI_FORMATS.map((x) => <option key={x} value={x}>{x}</option>)}
                               </select>
                             </div>
                             <div>
                               <label className="label">Target Frequency</label>
-                              <select className="input" value={r.targetFrequency} onChange={(e) => patchRow(r.key, { targetFrequency: e.target.value })}>
+                              <select className={cn("input", lockDef && readonly)} disabled={lockDef} value={r.targetFrequency} onChange={(e) => patchRow(r.key, { targetFrequency: e.target.value })}>
                                 {TARGET_FREQUENCIES.map((x) => <option key={x} value={x}>{x}</option>)}
                               </select>
                             </div>
                             <div>
                               <label className="label">Frequency Value</label>
-                              <input type="number" className="input" value={r.frequencyValue} onChange={(e) => patchRow(r.key, { frequencyValue: e.target.value })} />
+                              <input type="number" className={cn("input", lockDef && readonly)} disabled={lockDef} value={r.frequencyValue} onChange={(e) => patchRow(r.key, { frequencyValue: e.target.value })} />
                             </div>
                             <div className="sm:col-span-2">
                               <label className="label">Evidence Data Link</label>
