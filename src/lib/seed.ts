@@ -278,6 +278,22 @@ kpis.push(mkKpi({
   status: "APPROVED", periodMonth: 10, periodYear: 2026,
 }));
 
+/* ---------------- Predefined KPIs assigned by HR — employee only fills the rest ---------------- */
+const predefinedByHr: (Partial<Kpi> & { name: string })[] = [
+  { name: "In-House Research Reports", objectiveId: "obj5", kraId: "kra9", perspective: "Financial", uom: "Count", direction: "HIGHER_BETTER", srf: "Monthly", weight: 10, kpiType: "VARIABLE", pmType: "BSC" },
+  { name: "Consulting Cost Avoided", objectiveId: "obj5", kraId: "kra9", perspective: "Financial", uom: "BDT Lac", direction: "HIGHER_BETTER", srf: "Monthly", weight: 10, kpiType: "VARIABLE", pmType: "BSC" },
+  { name: "Stakeholder Satisfaction Score", objectiveId: "obj2", kraId: "kra3", perspective: "Customer", uom: "Score", direction: "HIGHER_BETTER", srf: "Quarterly", weight: 10, kpiType: "NON_VARIABLE", pmType: "BSC" },
+  { name: "Process Turnaround Time", objectiveId: "obj3", kraId: "kra5", perspective: "Internal Process", uom: "Days", direction: "LOWER_BETTER", srf: "Monthly", weight: 10, kpiType: "VARIABLE", pmType: "BSC" },
+];
+for (const p of predefinedByHr) {
+  kpis.push(mkKpi({
+    ownerId: "u12", approverId: "u6",
+    target: 0, actual: 0,
+    status: "APPROVED", stage: "DEPT", periodMonth: 10, periodYear: 2026,
+    ...p,
+  }));
+}
+
 /* ---------------- Evidence / versions / decisions (reference KPIs) ---------------- */
 import type { EvidenceFile } from "./types";
 const evidence: EvidenceFile[] = [];
@@ -286,7 +302,7 @@ const decisions: ReviewDecision[] = [];
 
 let evc = 0, vc = 0, dc = 0;
 for (const k of kpis) {
-  if (k.status === "DRAFT") continue;
+  if (k.status === "DRAFT" || (k.target === 0 && k.actual === 0)) continue;
   evc += 1;
   evidence.push({
     id: `ev${evc}`, kpiId: k.id, name: `${k.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-evidence.pdf`,
