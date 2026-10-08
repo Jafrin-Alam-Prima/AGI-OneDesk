@@ -9,6 +9,7 @@ import { Modal } from "@/components/ui/modal";
 import { Field, Select, TextArea, TextInput } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { formatDate } from "@/lib/utils";
+import { analyseSentiment } from "@/lib/ai";
 
 const CATEGORIES = ["Workplace", "Compensation", "Management", "Harassment", "Policy", "Other"];
 const TONE: Record<string, "amber" | "blue" | "green"> = { OPEN: "amber", IN_REVIEW: "blue", RESOLVED: "green" };
@@ -32,12 +33,27 @@ export default function GrievancesPage() {
       <PageHeader title="Grievance Management" subtitle="Raise and track grievances confidentially."
         action={<button className="btn-primary" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Raise Grievance</button>} />
 
+      {isHR ? (
+        <div className="mb-4 flex flex-wrap gap-2 text-xs">
+          <span className="chip bg-rose-100 text-rose-700">{rows.filter((g) => analyseSentiment(g.description).label === "Negative").length} negative</span>
+          <span className="chip bg-emerald-100 text-emerald-700">{rows.filter((g) => analyseSentiment(g.description).label === "Positive").length} positive</span>
+          <span className="chip bg-ink-100 text-ink-600">{rows.length} total · AI sentiment (simulated)</span>
+        </div>
+      ) : null}
+
       <div className="space-y-3">
-        {rows.map((g) => (
+        {rows.map((g) => {
+          const s = analyseSentiment(g.description);
+          return (
           <Card key={g.id} className="card-pad">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <div className="flex items-center gap-2"><Badge tone="purple">{g.category}</Badge><Badge tone={TONE[g.status]}>{g.status.replace("_", " ")}</Badge></div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge tone="purple">{g.category}</Badge>
+                  <Badge tone={TONE[g.status]}>{g.status.replace("_", " ")}</Badge>
+                  <Badge tone={s.label === "Negative" ? "red" : s.label === "Positive" ? "green" : "neutral"}>AI sentiment: {s.label}</Badge>
+                  {s.themes.slice(0, 3).map((t) => <span key={t} className="chip bg-ink-100 text-ink-600">{t}</span>)}
+                </div>
                 <p className="mt-2 text-sm text-ink-700">{g.description}</p>
                 <p className="mt-1 text-xs text-ink-400">{isHR ? `${nameOf(users, g.userId)} · ` : ""}{formatDate(g.createdAt)}</p>
                 {g.resolution ? <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700">Resolution: {g.resolution}</p> : null}
@@ -50,7 +66,8 @@ export default function GrievancesPage() {
               ) : null}
             </div>
           </Card>
-        ))}
+          );
+        })}
         {!rows.length ? <Card className="card-pad text-center text-sm text-ink-500">No grievances recorded.</Card> : null}
       </div>
 

@@ -103,6 +103,7 @@ export const NAV: NavGroup[] = [
     title: "Insights",
     items: [
       { label: "Reports", href: "/reports", icon: "BarChart3", roles: HEADS },
+      { label: "Attrition (AI)", href: "/insights/attrition", icon: "Activity", roles: HEADS },
       { label: "Announcements", href: "/announcements", icon: "Megaphone", roles: ALL },
       { label: "Policy & Documents", href: "/policies", icon: "BookText", roles: ALL },
       { label: "Contact Book", href: "/contact-book", icon: "Contact", roles: ALL, more: true },
@@ -121,6 +122,7 @@ export const NAV: NavGroup[] = [
       { label: "Documents", href: "/admin/documents", icon: "FileStack", roles: ADMIN },
       { label: "Audit Trail", href: "/admin/audit", icon: "ScrollText", roles: ADMIN },
       { label: "Version Control", href: "/admin/versions", icon: "History", roles: ADMIN },
+      { label: "AI Governance", href: "/admin/ai-governance", icon: "Sparkles", roles: ADMIN },
     ],
   },
 ];

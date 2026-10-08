@@ -6,8 +6,9 @@ import { useStore } from "@/lib/store";
 import { deptName } from "@/lib/selectors";
 import { PageHeader, Badge, StatCard, Card, CardHeader } from "@/components/ui/primitives";
 import { Modal } from "@/components/ui/modal";
-import { Field, Select, TextInput } from "@/components/ui/field";
+import { Field, Select, TextArea, TextInput } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
+import { screenResume } from "@/lib/ai";
 import { DataTable, ActionMenu, type Column } from "@/components/ui/data-table";
 import { bdt, formatDate } from "@/lib/utils";
 import type { Candidate } from "@/lib/types";
@@ -22,6 +23,7 @@ export default function RecruitmentPage() {
   const move = useStore((s) => s.moveCandidate);
   const { push } = useToast();
   const [open, setOpen] = useState(false);
+  const [jd, setJd] = useState("");
   const [f, setF] = useState({ name: "", position: "", departmentId: departments[0]?.id ?? "", skills: "", salaryExpectation: "" });
 
   const cols: Column<Candidate>[] = [
@@ -59,6 +61,40 @@ export default function RecruitmentPage() {
               {i < STAGES.length - 1 ? <ChevronRight className="h-3.5 w-3.5 text-ink-300" /> : null}
             </span>
           ))}
+        </div>
+      </Card>
+
+      <Card className="mb-4">
+        <CardHeader title="AI — Resume Screening" subtitle="Paste a job description; candidates are scored by required-skill overlap. AI suggests; the recruiter decides." />
+        <div className="p-5">
+          <Field label="Job description">
+            <TextArea rows={3} value={jd} onChange={(e) => setJd(e.target.value)} placeholder="e.g. FMCG sales role requiring negotiation, CRM, excel, data analysis and reporting" />
+          </Field>
+          {jd.trim().length >= 5 ? (
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full min-w-[760px]">
+                <thead className="bg-ink-50/60"><tr>
+                  <th className="th">Candidate</th><th className="th">Position</th><th className="th text-right">Match</th>
+                  <th className="th">Matched skills</th><th className="th">Missing</th><th className="th text-right">Action</th>
+                </tr></thead>
+                <tbody>
+                  {candidates.map((c) => ({ c, m: screenResume(jd, `${c.position} ${c.skills}`) })).sort((a, b) => b.m.match - a.m.match).map(({ c, m }) => (
+                    <tr key={c.id} className="border-b border-ink-50 last:border-0">
+                      <td className="td font-medium text-ink-800">{c.name}</td>
+                      <td className="td text-sm text-ink-500">{c.position}</td>
+                      <td className="td num text-right font-semibold text-brand-600">{m.match}%</td>
+                      <td className="td text-xs text-emerald-600">{m.matched.join(", ") || "—"}</td>
+                      <td className="td text-xs text-red-600">{m.missing.join(", ") || "—"}</td>
+                      <td className="td text-right"><button className="btn-secondary btn-sm" onClick={() => { move(c.id, "SCREENING"); push("success", `${c.name} shortlisted (AI suggestion accepted).`); }}>Shortlist</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="mt-2 text-xs text-ink-400">Why: each match is the JD↔resume skill overlap. Shortlisting is a human action; the AI never rejects a candidate.</p>
+            </div>
+          ) : (
+            <p className="text-xs text-ink-400">Enter a job description to screen candidates.</p>
+          )}
         </div>
       </Card>
 

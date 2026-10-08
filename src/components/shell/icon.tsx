@@ -6,7 +6,7 @@ import {
   User, Inbox, Users, UserPlus, GraduationCap, BadgeCheck, ArrowLeftRight, DoorOpen,
   Award, Headphones, ListChecks, Boxes, UtensilsCrossed, ShieldCheck, BarChart3,
   Megaphone, BookText, Contact, Building2, UserCog, SlidersHorizontal, Layers,
-  GitBranch, FileStack, ScrollText, History, FileText, type LucideIcon,
+  GitBranch, FileStack, ScrollText, History, FileText, Activity, Sparkles, type LucideIcon,
 } from "lucide-react";
 
 const MAP: Record<string, LucideIcon> = {
@@ -15,7 +15,7 @@ const MAP: Record<string, LucideIcon> = {
   User, Inbox, Users, UserPlus, GraduationCap, BadgeCheck, ArrowLeftRight, DoorOpen,
   Award, Headphones, ListChecks, Boxes, UtensilsCrossed, ShieldCheck, BarChart3,
   Megaphone, BookText, Contact, Building2, UserCog, SlidersHorizontal, Layers,
-  GitBranch, FileStack, ScrollText, History, FileText,
+  GitBranch, FileStack, ScrollText, History, FileText, Activity, Sparkles,
 };
 
 export function NavIcon({ name, className }: { name?: string; className?: string }) {
