@@ -7,7 +7,7 @@ import { useStore } from "@/lib/store";
 import { useToast } from "@/components/ui/toast";
 import { achievement, calculatedScore } from "@/lib/calc";
 import { directionLabel, kpiTypeLabel } from "./kpi-entry";
-import { num } from "@/lib/utils";
+import { num, cn } from "@/lib/utils";
 import type { Kpi } from "@/lib/types";
 
 type Draft = {
@@ -72,7 +72,11 @@ export function KpiEntryTable({ kpis }: { kpis: Kpi[] }) {
   const ro = "text-ink-600";
 
   return (
-    <div className="overflow-x-auto">
+    <div>
+      <div className="flex items-center gap-2 border-b border-ink-100 bg-ink-50/50 px-5 py-2 text-[11px] text-ink-500">
+        <Lock className="h-3 w-3" /> The columns <b>SL → Weight</b> are defined by HR and are read-only. Enter your <b>Benchmark, Target, Achievement</b> and other fields, then Save.
+      </div>
+      <div className="overflow-x-auto">
       <table className="w-full min-w-[1850px] border-collapse text-sm">
         <thead>
           <tr className="bg-ink-50 text-left text-xs uppercase tracking-wide text-ink-500">
@@ -106,8 +110,10 @@ export function KpiEntryTable({ kpis }: { kpis: Kpi[] }) {
             const a = Number(d.actual) || 0;
             const ach = t > 0 ? achievement(t, a) : 0;
             const score = t > 0 ? calculatedScore(t, a) : 0;
+            const editable = k.status === "SUBMITTED" || k.status === "RETURNED";
+            const lockCls = cn("input", !editable && "border-ink-200 bg-ink-100/70 text-ink-600");
             return (
-              <tr key={k.id} className="border-b border-ink-100 align-top">
+              <tr key={k.id} className={cn("border-b border-ink-100 align-top", !editable && "bg-ink-50/30")}>
                 <td className="px-3 py-3 text-ink-500">{i + 1}</td>
                 <td className="px-3 py-3"><span className="chip bg-brand-100 text-brand-700">{obj?.perspective ?? "—"}</span></td>
                 <td className="px-3 py-3 max-w-[240px]"><span className={ro}>{obj?.name ?? "—"}</span></td>
@@ -122,23 +128,30 @@ export function KpiEntryTable({ kpis }: { kpis: Kpi[] }) {
                 <td className="px-3 py-3"><span className={ro}>{k.srf || "—"}</span></td>
                 <td className="px-3 py-3 num"><span className={ro}>{k.weight}%</span></td>
 
-                <td className="px-3 py-3"><input type="number" className="input w-24" value={d.benchmark} placeholder="—" onChange={(e) => set(k.id, { benchmark: e.target.value })} /></td>
-                <td className="px-3 py-3"><input type="number" className="input w-24" value={d.target} onChange={(e) => set(k.id, { target: e.target.value })} /></td>
-                <td className="px-3 py-3"><input type="number" className="input w-24" value={d.actual} onChange={(e) => set(k.id, { actual: e.target.value })} /></td>
-                <td className="px-3 py-3"><input className="input min-w-[170px]" value={d.evidenceLink} placeholder="https://…" onChange={(e) => set(k.id, { evidenceLink: e.target.value })} /></td>
-                <td className="px-3 py-3"><input className="input min-w-[150px]" value={d.dataSource} placeholder="e.g. ERP report" onChange={(e) => set(k.id, { dataSource: e.target.value })} /></td>
-                <td className="px-3 py-3"><input className="input min-w-[130px]" value={d.kpiCharter} onChange={(e) => set(k.id, { kpiCharter: e.target.value })} /></td>
-                <td className="px-3 py-3"><input className="input min-w-[130px]" value={d.kpiDriver} onChange={(e) => set(k.id, { kpiDriver: e.target.value })} /></td>
+                <td className="px-3 py-3"><input type="number" className={cn(lockCls, "w-24")} disabled={!editable} value={d.benchmark} placeholder="—" onChange={(e) => set(k.id, { benchmark: e.target.value })} /></td>
+                <td className="px-3 py-3"><input type="number" className={cn(lockCls, "w-24")} disabled={!editable} value={d.target} onChange={(e) => set(k.id, { target: e.target.value })} /></td>
+                <td className="px-3 py-3"><input type="number" className={cn(lockCls, "w-24")} disabled={!editable} value={d.actual} onChange={(e) => set(k.id, { actual: e.target.value })} /></td>
+                <td className="px-3 py-3"><input className={cn(lockCls, "min-w-[170px]")} disabled={!editable} value={d.evidenceLink} placeholder="https://…" onChange={(e) => set(k.id, { evidenceLink: e.target.value })} /></td>
+                <td className="px-3 py-3"><input className={cn(lockCls, "min-w-[150px]")} disabled={!editable} value={d.dataSource} placeholder="e.g. ERP report" onChange={(e) => set(k.id, { dataSource: e.target.value })} /></td>
+                <td className="px-3 py-3"><input className={cn(lockCls, "min-w-[130px]")} disabled={!editable} value={d.kpiCharter} onChange={(e) => set(k.id, { kpiCharter: e.target.value })} /></td>
+                <td className="px-3 py-3"><input className={cn(lockCls, "min-w-[130px]")} disabled={!editable} value={d.kpiDriver} onChange={(e) => set(k.id, { kpiDriver: e.target.value })} /></td>
 
                 <td className="px-3 py-3 num text-ink-600">{t > 0 ? `${num(ach, 0)}%` : "—"}</td>
                 <td className="px-3 py-3 num text-ink-600">{t > 0 ? num(score, 2) : "—"}</td>
                 <td className="px-3 py-3"><KpiStatusBadge status={k.status} /></td>
-                <td className="px-3 py-3"><button className="btn-primary btn-sm" onClick={() => save(k)}><Save className="h-3.5 w-3.5" /> Save</button></td>
+                <td className="px-3 py-3">
+                  {editable ? (
+                    <button className="btn-primary btn-sm" onClick={() => save(k)}><Save className="h-3.5 w-3.5" /> Save</button>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs text-ink-400"><Lock className="h-3.5 w-3.5" /> Locked</span>
+                  )}
+                </td>
               </tr>
             );
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

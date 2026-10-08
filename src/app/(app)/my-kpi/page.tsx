@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/ui/primitives";
 import { canEditKpiDefinition } from "@/lib/navigation";
 import { KpiCard } from "@/components/kpi/kpi-card";
 import { KpiEntryTable } from "@/components/kpi/kpi-entry-table";
+import { VariableIncomePanel } from "@/components/kpi/variable-income-panel";
 import { TextInput } from "@/components/ui/field";
 
 export default function MyKpiPage() {
@@ -16,6 +17,7 @@ export default function MyKpiPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("ALL");
   const [onlyPending, setOnlyPending] = useState(false);
+  const [view, setView] = useState<"SCORECARD" | "VARIABLE">("SCORECARD");
 
   const mine = useMemo(() => {
     if (!me) return [];
@@ -68,6 +70,14 @@ export default function MyKpiPage() {
         </p>
       ) : null}
 
+      {/* View: KPI Scorecard | Variable Income */}
+      <div className="mb-4 inline-flex rounded-lg border border-ink-200 bg-white p-0.5">
+        <button className={view === "SCORECARD" ? "rounded-md bg-brand-600 px-3.5 py-1.5 text-sm font-medium text-white" : "rounded-md px-3.5 py-1.5 text-sm font-medium text-ink-600 hover:bg-ink-50"} onClick={() => setView("SCORECARD")}>KPI Scorecard</button>
+        <button className={view === "VARIABLE" ? "rounded-md bg-brand-600 px-3.5 py-1.5 text-sm font-medium text-white" : "rounded-md px-3.5 py-1.5 text-sm font-medium text-ink-600 hover:bg-ink-50"} onClick={() => setView("VARIABLE")}>Variable Income</button>
+      </div>
+
+      {view === "VARIABLE" ? <VariableIncomePanel /> : (
+      <>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div className="relative min-w-[220px] flex-1 sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
@@ -125,6 +135,8 @@ export default function MyKpiPage() {
           ) : null}
         </div>
       </div>
+      )}
+      </>
       )}
     </div>
   );

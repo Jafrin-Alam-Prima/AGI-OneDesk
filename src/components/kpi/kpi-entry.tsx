@@ -41,6 +41,8 @@ export function KpiEntrySection({ kpi }: { kpi: Kpi }) {
   const canDefine = canEditKpiDefinition(me?.role);
   const isOwner = !!me && me.id === kpi.ownerId;
   const canEnter = isOwner || canDefine;
+  // Supervisor-approved (or not-yet-released) KPIs are read-only for entry.
+  const editable = canEnter && (kpi.status === "SUBMITTED" || kpi.status === "RETURNED");
 
   const [name, setName] = useState(kpi.name);
   const [objectiveId, setObjectiveId] = useState(kpi.objectiveId ?? "");
@@ -164,30 +166,30 @@ export function KpiEntrySection({ kpi }: { kpi: Kpi }) {
       <Card>
         <CardHeader
           title="Employee Entry"
-          subtitle={canEnter ? "Enter your performance information." : "View only."}
+          subtitle={editable ? "Enter your performance information." : canEnter ? "Locked — this KPI is approved or not yet released." : "View only."}
           action={<Badge tone={kpiType === "VARIABLE" ? "purple" : "blue"}>{kpiTypeLabel(kpiType)}</Badge>}
         />
         <div className="grid gap-x-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
           <Field label="Benchmark">
-            <TextInput type="number" value={benchmark} disabled={!canEnter} className={cn(!canEnter && ro)} onChange={(e) => setBenchmark(e.target.value)} />
+            <TextInput type="number" value={benchmark} disabled={!editable} className={cn(!editable && ro)} onChange={(e) => setBenchmark(e.target.value)} />
           </Field>
           <Field label="Target">
-            <TextInput type="number" value={target} disabled={!canEnter} className={cn(!canEnter && ro)} onChange={(e) => setTarget(e.target.value)} />
+            <TextInput type="number" value={target} disabled={!editable} className={cn(!editable && ro)} onChange={(e) => setTarget(e.target.value)} />
           </Field>
           <Field label="Achievement">
-            <TextInput type="number" value={actual} disabled={!canEnter} className={cn(!canEnter && ro)} onChange={(e) => setActual(e.target.value)} />
+            <TextInput type="number" value={actual} disabled={!editable} className={cn(!editable && ro)} onChange={(e) => setActual(e.target.value)} />
           </Field>
           <Field label="Evidence Data Link" className="sm:col-span-2">
-            <TextInput value={evidenceLink} disabled={!canEnter} className={cn(!canEnter && ro)} placeholder="https://…" onChange={(e) => setEvidenceLink(e.target.value)} />
+            <TextInput value={evidenceLink} disabled={!editable} className={cn(!editable && ro)} placeholder="https://…" onChange={(e) => setEvidenceLink(e.target.value)} />
           </Field>
           <Field label="Data Source">
-            <TextInput value={dataSource} disabled={!canEnter} className={cn(!canEnter && ro)} placeholder="e.g. ERP / Finance report" onChange={(e) => setDataSource(e.target.value)} />
+            <TextInput value={dataSource} disabled={!editable} className={cn(!editable && ro)} placeholder="e.g. ERP / Finance report" onChange={(e) => setDataSource(e.target.value)} />
           </Field>
           <Field label="KPI Charter">
-            <TextInput value={kpiCharter} disabled={!canEnter} className={cn(!canEnter && ro)} onChange={(e) => setKpiCharter(e.target.value)} />
+            <TextInput value={kpiCharter} disabled={!editable} className={cn(!editable && ro)} onChange={(e) => setKpiCharter(e.target.value)} />
           </Field>
           <Field label="KPI Driver">
-            <TextInput value={kpiDriver} disabled={!canEnter} className={cn(!canEnter && ro)} onChange={(e) => setKpiDriver(e.target.value)} />
+            <TextInput value={kpiDriver} disabled={!editable} className={cn(!editable && ro)} onChange={(e) => setKpiDriver(e.target.value)} />
           </Field>
         </div>
 
@@ -200,9 +202,9 @@ export function KpiEntrySection({ kpi }: { kpi: Kpi }) {
 
         <div className="flex items-center justify-between gap-3 border-t border-ink-100 px-5 py-4">
           <p className="flex items-center gap-1.5 text-xs text-ink-400">
-            <ShieldCheck className="h-3.5 w-3.5" /> Progress, Score and Status are calculated by the system.
+            <ShieldCheck className="h-3.5 w-3.5" /> {editable ? "Progress, Score and Status are calculated by the system." : "This KPI is locked (approved or not yet released for entry)."}
           </p>
-          <button className="btn-primary" disabled={!canEnter} onClick={save}><Save className="h-4 w-4" /> Save KPI Entry</button>
+          <button className="btn-primary" disabled={!editable} onClick={save}><Save className="h-4 w-4" /> Save KPI Entry</button>
         </div>
       </Card>
     </div>

@@ -290,7 +290,7 @@ for (const p of predefinedByHr) {
   kpis.push(mkKpi({
     ownerId: "u12", approverId: "u6",
     target: 0, actual: 0,
-    status: "APPROVED", stage: "DEPT", periodMonth: 10, periodYear: 2026,
+    status: "SUBMITTED", stage: "DEPT", periodMonth: 10, periodYear: 2026,
     ...p,
   }));
 }

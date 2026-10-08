@@ -530,7 +530,7 @@ export const useStore = create<Store>()(
       audit: (action, entity, entityId, detail) => set((s) => ({ auditLogs: [pushAudit(s, s.session.userId ?? "", action, entity, entityId, detail), ...s.auditLogs] })),
     }),
     {
-      name: "agi-onedesk-v6",
+      name: "agi-onedesk-v7",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => {
         const data: Record<string, unknown> = {};

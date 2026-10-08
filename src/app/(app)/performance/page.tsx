@@ -5,8 +5,8 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { Download, FileText } from "lucide-react";
 import { useStore, useCurrentUser } from "@/lib/store";
 import { kpisVisibleTo, nameOf } from "@/lib/selectors";
-import { Card, CardHeader, PageHeader, Tabs, KpiStatusBadge } from "@/components/ui/primitives";
-import { achievement, averageAchievement, calculatedScore, isCounted, totalKpiScore } from "@/lib/calc";
+import { Card, CardHeader, PageHeader, Tabs, KpiStatusBadge, Badge } from "@/components/ui/primitives";
+import { achievement, averageAchievement, calculatedScore, isCounted, totalKpiScore, vkRecordTotal, gradeFor } from "@/lib/calc";
 import { download, monthName, num, toCSV } from "@/lib/utils";
 import type { Kpi } from "@/lib/types";
 
@@ -17,12 +17,16 @@ export default function PerformancePage() {
   const me = useCurrentUser();
   const users = useStore((s) => s.users);
   const kpisAll = useStore((s) => s.kpis);
+  const viRecords = useStore((s) => s.variableIncome);
+  const grades = useStore((s) => s.grades);
   const all = useMemo(() => kpisVisibleTo(useStore.getState(), me), [me, kpisAll]);
   const [gran, setGran] = useState<Gran>("MONTHLY");
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(2026);
 
   const mine = useMemo(() => all.filter((k) => (me ? k.ownerId === me.id : false)), [all, me]);
+
+  const vi = useMemo(() => viRecords.find((r) => (me ? r.employeeId === me.id : false) && r.periodYear === year && r.periodMonth === month), [viRecords, me, year, month]);
 
   function inRange(k: Kpi, g: Gran, m: number, y: number): boolean {
     if (k.periodYear !== y) return false;
@@ -85,6 +89,22 @@ export default function PerformancePage() {
         <MetricTile label="Difference" value={`${diff > 0 ? "+" : ""}${num(diff, 1)}`} hint={`${Math.abs(diff).toFixed(1)} ${dirWord} the ${prevLabel}`} />
         <MetricTile label="Approved KPIs" value={`${approved}/${period.length}`} />
       </div>
+
+      {vi ? (
+        <Card className="card-pad mb-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-ink-400">Variable Income · {periodLabel}</p>
+              <p className="num mt-1 text-xl font-bold text-ink-900">
+                {num(vkRecordTotal(vi), 4)}
+                <span className="ml-2 text-sm font-normal text-ink-500">Grade {gradeFor(vkRecordTotal(vi), grades)?.name ?? "—"}</span>
+              </p>
+            </div>
+            <Badge tone="brand">{gradeFor(vkRecordTotal(vi), grades)?.label ?? "—"}</Badge>
+          </div>
+          <p className="mt-1 text-xs text-ink-400">The capped variable-income score is the consequence of your Variable KPIs.</p>
+        </Card>
+      ) : null}
 
       {!period.length ? (
         <Card className="card-pad text-center text-sm text-ink-500">No KPIs for {periodLabel}. Choose another period.</Card>

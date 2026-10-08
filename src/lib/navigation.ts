@@ -46,7 +46,6 @@ export const NAV: NavGroup[] = [
       { label: "My KPI", href: "/my-kpi", icon: "Target", roles: ALL },
       { label: "KPI Requests", href: "/kpi-requests", icon: "ClipboardCheck", roles: HEADS, badgeKey: "kpiPending" },
       { label: "Performance Summary", href: "/performance", icon: "LineChart", roles: ALL },
-      { label: "Variable Income", href: "/variable-income", icon: "Banknote", roles: ALL },
       { label: "Leaderboard", href: "/leaderboard", icon: "Trophy", roles: HEADS },
     ],
   },
