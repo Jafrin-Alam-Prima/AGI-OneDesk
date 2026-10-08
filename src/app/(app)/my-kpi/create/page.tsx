@@ -288,6 +288,7 @@ export default function CreateIndividualKpiPage() {
                 <th className="px-3 py-3">BSC</th>
                 <th className="px-3 py-3">Objective</th>
                 <th className="px-3 py-3">KPI</th>
+                <th className="px-3 py-3">KPI Type</th>
                 <th className="px-3 py-3">UOM</th>
                 <th className="px-3 py-3">KPI Direction</th>
                 <th className="px-3 py-3">SRF</th>
@@ -324,6 +325,12 @@ export default function CreateIndividualKpiPage() {
                       </td>
                       <td className="px-3 py-3">
                         <input className={cn("input min-w-[220px]", err.name && !lockDef && "input-error", lockDef && readonly)} disabled={lockDef} value={r.name} onChange={(e) => patchRow(r.key, { name: e.target.value })} placeholder="KPI name" />
+                      </td>
+                      <td className="px-3 py-3">
+                        <select className={cn("input min-w-[150px]", lockDef && readonly)} disabled={lockDef} value={r.kpiType} onChange={(e) => patchRow(r.key, { kpiType: e.target.value as NonNullable<Kpi["kpiType"]> })}>
+                          <option value="VARIABLE">Variable KPI</option>
+                          <option value="NON_VARIABLE">Non-Variable KPI</option>
+                        </select>
                       </td>
                       <td className="px-3 py-3">
                         <select className={cn("input min-w-[100px]", lockDef && readonly)} disabled={lockDef} value={r.uom} onChange={(e) => patchRow(r.key, { uom: e.target.value })}>
@@ -372,15 +379,8 @@ export default function CreateIndividualKpiPage() {
                     {r.open ? (
                       <tr key={`${r.key}-more`} className="border-b border-ink-100 bg-ink-50/40">
                         <td></td>
-                        <td colSpan={13} className="px-3 py-4">
+                        <td colSpan={15} className="px-3 py-4">
                           <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
-                            <div>
-                              <label className="label">KPI Type</label>
-                              <select className={cn("input", lockDef && readonly)} disabled={lockDef} value={r.kpiType} onChange={(e) => patchRow(r.key, { kpiType: e.target.value as NonNullable<Kpi["kpiType"]> })}>
-                                <option value="VARIABLE">Variable KPI</option>
-                                <option value="NON_VARIABLE">Non-Variable KPI</option>
-                              </select>
-                            </div>
                             <div>
                               <label className="label">Aggregation Type</label>
                               <select className={cn("input", lockDef && readonly)} disabled={lockDef} value={r.aggregationType} onChange={(e) => patchRow(r.key, { aggregationType: e.target.value })}>

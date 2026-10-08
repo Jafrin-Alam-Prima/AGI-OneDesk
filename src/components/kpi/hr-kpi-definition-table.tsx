@@ -62,6 +62,7 @@ export function HrKpiDefinitionTable() {
   const { push } = useToast();
   const users = useStore((s) => s.users);
   const objectives = useStore((s) => s.objectives);
+  const kpis = useStore((s) => s.kpis);
   const createKpi = useStore((s) => s.createKpi);
   const submitKpi = useStore((s) => s.submitKpi);
 
@@ -77,6 +78,7 @@ export function HrKpiDefinitionTable() {
 
   const employee = activeUsers.find((u) => u.id === employeeId);
   const kpiAdmin = users.find((u) => ["HR_ADMIN", "SYS_ADMIN", "SUPER_ADMIN"].includes(u.role));
+  const definedForPeriod = kpis.filter((k) => !k.deleted && k.ownerId === employeeId && k.periodYear === year && k.periodMonth === fromMonth).length;
 
   const patchRow = (key: string, patch: Partial<RowDraft>) =>
     setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
@@ -137,6 +139,11 @@ export function HrKpiDefinitionTable() {
 
   return (
     <div>
+      {employee && definedForPeriod === 0 ? (
+        <p className="mb-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" /> 0 KPIs defined for {employee.fullName} in {monthName(fromMonth)} {year}. Add a KPI row below to define one.
+        </p>
+      ) : null}
       {/* Context bar */}
       <div className="card card-pad mb-4">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">

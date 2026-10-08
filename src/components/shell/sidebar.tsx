@@ -14,6 +14,9 @@ import { Logo } from "./logo";
 export function Sidebar({ role, onNavigate }: { role: Role; onNavigate?: () => void }) {
   const pathname = usePathname();
   const groups = visibleNav(role);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const primaryGroups = groups.map((g) => ({ ...g, items: g.items.filter((i) => !i.more) })).filter((g) => g.items.length > 0);
+  const moreItems = groups.flatMap((g) => g.items.filter((i) => i.more));
 
   const pendingCount = useStore((s) => {
     const me = s.users.find((u) => u.id === s.session.userId);
@@ -42,7 +45,7 @@ export function Sidebar({ role, onNavigate }: { role: Role; onNavigate?: () => v
         </div>
       </div>
       <div className="flex-1 px-2 py-3">
-        {groups.map((group) => (
+        {primaryGroups.map((group) => (
           <div key={group.title} className="mb-3">
             <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-ink-400">{group.title}</p>
             <ul className="space-y-0.5">
@@ -59,6 +62,25 @@ export function Sidebar({ role, onNavigate }: { role: Role; onNavigate?: () => v
             </ul>
           </div>
         ))}
+
+        {moreItems.length ? (
+          <div className="mb-3">
+            <button
+              onClick={() => setMoreOpen((o) => !o)}
+              className="flex w-full items-center justify-between px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-ink-400 hover:text-ink-600"
+            >
+              More
+              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", moreOpen && "rotate-180")} />
+            </button>
+            {moreOpen ? (
+              <ul className="space-y-0.5">
+                {moreItems.map((item) => (
+                  <NavRow key={item.label} item={item} active={isActive(item.href)} pathname={pathname} pendingCount={item.badgeKey === "kpiPending" ? pendingCount : 0} onNavigate={onNavigate} />
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </nav>
   );

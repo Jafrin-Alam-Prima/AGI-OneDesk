@@ -7,6 +7,8 @@ export interface NavItem {
   roles?: Role[];
   children?: NavItem[];
   badgeKey?: "kpiPending" | "notifications";
+  /** Secondary/experimental module — collapsed under "More" in the sidebar. */
+  more?: boolean;
 }
 
 export interface NavGroup {
@@ -81,20 +83,20 @@ export const NAV: NavGroup[] = [
       { label: "Employees", href: "/employees", icon: "Users", roles: ADMIN },
       { label: "Recruitment", href: "/recruitment", icon: "UserPlus", roles: HEADS },
       { label: "Training", href: "/training", icon: "GraduationCap", roles: ALL },
-      { label: "Confirmation", href: "/confirmation", icon: "BadgeCheck", roles: HEADS },
-      { label: "Transfer & Promotion", href: "/transfers", icon: "ArrowLeftRight", roles: HEADS },
-      { label: "Separation", href: "/separation", icon: "DoorOpen", roles: HEADS },
-      { label: "Rewards & Discipline", href: "/rewards", icon: "Award", roles: HEADS },
+      { label: "Confirmation", href: "/confirmation", icon: "BadgeCheck", roles: HEADS, more: true },
+      { label: "Transfer & Promotion", href: "/transfers", icon: "ArrowLeftRight", roles: HEADS, more: true },
+      { label: "Separation", href: "/separation", icon: "DoorOpen", roles: HEADS, more: true },
+      { label: "Rewards & Discipline", href: "/rewards", icon: "Award", roles: HEADS, more: true },
     ],
   },
   {
     title: "Workplace",
     items: [
-      { label: "Helpdesk", href: "/helpdesk", icon: "Headphones", roles: ALL },
-      { label: "Tasks", href: "/tasks", icon: "ListChecks", roles: ALL },
-      { label: "Assets", href: "/assets", icon: "Boxes", roles: HEADS },
-      { label: "Cafeteria", href: "/cafeteria", icon: "UtensilsCrossed", roles: ALL },
-      { label: "GRC", href: "/grc", icon: "ShieldCheck", roles: HEADS },
+      { label: "Helpdesk", href: "/helpdesk", icon: "Headphones", roles: ALL, more: true },
+      { label: "Tasks", href: "/tasks", icon: "ListChecks", roles: ALL, more: true },
+      { label: "Assets", href: "/assets", icon: "Boxes", roles: HEADS, more: true },
+      { label: "Cafeteria", href: "/cafeteria", icon: "UtensilsCrossed", roles: ALL, more: true },
+      { label: "GRC", href: "/grc", icon: "ShieldCheck", roles: HEADS, more: true },
     ],
   },
   {
@@ -103,8 +105,8 @@ export const NAV: NavGroup[] = [
       { label: "Reports", href: "/reports", icon: "BarChart3", roles: HEADS },
       { label: "Announcements", href: "/announcements", icon: "Megaphone", roles: ALL },
       { label: "Policy & Documents", href: "/policies", icon: "BookText", roles: ALL },
-      { label: "Contact Book", href: "/contact-book", icon: "Contact", roles: ALL },
-      { label: "Templates", href: "/templates", icon: "FileText", roles: ALL },
+      { label: "Contact Book", href: "/contact-book", icon: "Contact", roles: ALL, more: true },
+      { label: "Templates", href: "/templates", icon: "FileText", roles: ALL, more: true },
     ],
   },
   {

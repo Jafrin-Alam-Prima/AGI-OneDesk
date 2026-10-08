@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState, useEffect } from "react";
-import { Menu, Search, Bell, HelpCircle, ChevronDown, LogOut, User as UserIcon, RotateCcw, Check, Briefcase } from "lucide-react";
+import { Menu, Search, Bell, HelpCircle, ChevronDown, LogOut, User as UserIcon, RotateCcw, Check, Briefcase, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore, useCurrentUser } from "@/lib/store";
-import { ROLE_LABEL } from "@/lib/navigation";
+import { ROLE_LABEL, ROLE_HOME } from "@/lib/navigation";
+import type { Role } from "@/lib/types";
 import { Avatar } from "@/components/ui/primitives";
 import { Logo } from "./logo";
 
@@ -21,14 +22,17 @@ export function Topbar({ onMenu, onSearch }: { onMenu: () => void; onSearch?: (q
   const markAll = useStore((s) => s.markAllNotifications);
   const logout = useStore((s) => s.logout);
   const resetDemo = useStore((s) => s.resetDemo);
+  const setSession = useStore((s) => s.setSession);
 
   const [q, setQ] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [showBell, setShowBell] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showRole, setShowRole] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const bellRef = useRef<HTMLDivElement>(null);
   const profRef = useRef<HTMLDivElement>(null);
+  const roleRef = useRef<HTMLDivElement>(null);
 
   const departments = useStore((s) => s.departments);
   const myDepartment = departments.find((d) => d.id === me?.departmentId);
@@ -38,6 +42,7 @@ export function Topbar({ onMenu, onSearch }: { onMenu: () => void; onSearch?: (q
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) setShowSearch(false);
       if (bellRef.current && !bellRef.current.contains(e.target as Node)) setShowBell(false);
       if (profRef.current && !profRef.current.contains(e.target as Node)) setShowProfile(false);
+      if (roleRef.current && !roleRef.current.contains(e.target as Node)) setShowRole(false);
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
@@ -49,6 +54,19 @@ export function Topbar({ onMenu, onSearch }: { onMenu: () => void; onSearch?: (q
   );
   const unread = myNotifs.filter((n) => !n.read).length;
 
+  const roleOptions = useMemo(() => {
+    const order: Role[] = ["EMPLOYEE", "DEPT_HEAD", "HR_ADMIN", "SYS_ADMIN", "SUPER_ADMIN"];
+    return order
+      .map((r) => users.find((u) => u.role === r && u.status === "ACTIVE"))
+      .filter((u): u is NonNullable<typeof u> => !!u);
+  }, [users]);
+
+  function switchRole(userId: string, role: Role) {
+    setSession(userId);
+    setShowRole(false);
+    router.push(ROLE_HOME[role]);
+  }
+
   const results = useMemo(() => {
     if (q.trim().length < 2) return { kpis: [], people: [], pages: [] };
     const needle = q.toLowerCase();
@@ -57,7 +75,7 @@ export function Topbar({ onMenu, onSearch }: { onMenu: () => void; onSearch?: (q
       people: users.filter((u) => u.fullName.toLowerCase().includes(needle) || u.employeeId.toLowerCase().includes(needle)).slice(0, 4),
       pages: [
         { label: "My KPI", href: "/my-kpi" }, { label: "Performance Summary", href: "/performance" },
-        { label: "Variable Income", href: "/variable-income" }, { label: "Approval Center", href: "/approvals" },
+        { label: "Approval Center", href: "/approvals" },
         { label: "Reports", href: "/reports" }, { label: "Employees", href: "/employees" },
       ].filter((p) => p.label.toLowerCase().includes(needle)).slice(0, 4),
     };
@@ -119,6 +137,36 @@ export function Topbar({ onMenu, onSearch }: { onMenu: () => void; onSearch?: (q
       </div>
 
       <div className="ml-auto flex items-center gap-1">
+        {/* Demo role switcher — flip roles without logging out */}
+        <div className="relative" ref={roleRef}>
+          <button
+            className="hidden items-center gap-1.5 rounded-lg border border-dashed border-brand-300 bg-brand-50 px-2.5 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-100 sm:inline-flex"
+            onClick={() => setShowRole((s) => !s)}
+            title="Switch demo role without logging out"
+          >
+            <Users className="h-3.5 w-3.5" /> Demo role
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+          {showRole ? (
+            <div className="absolute right-0 top-11 z-50 w-64 overflow-hidden rounded-lg border border-ink-200 bg-white py-1 shadow-xl">
+              <p className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-ink-400">View the app as</p>
+              {roleOptions.map((u) => (
+                <button
+                  key={u.id}
+                  onClick={() => switchRole(u.id, u.role)}
+                  className={cn("flex w-full items-center justify-between gap-2 px-4 py-2 text-left text-sm hover:bg-ink-50", u.id === me?.id && "bg-brand-50/50")}
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium text-ink-800">{ROLE_LABEL[u.role]}</span>
+                    <span className="block truncate text-xs text-ink-500">{u.fullName}</span>
+                  </span>
+                  {u.id === me?.id ? <Check className="h-4 w-4 shrink-0 text-brand-600" /> : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
         <span className="hidden items-center gap-1.5 rounded-lg border border-ink-200 px-3 py-1.5 text-xs font-medium text-ink-600 md:inline-flex" title="Your department">
           <Briefcase className="h-3.5 w-3.5 text-ink-400" />
           {myDepartment?.name ?? "—"}
