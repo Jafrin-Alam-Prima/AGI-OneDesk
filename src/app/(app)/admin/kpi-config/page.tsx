@@ -9,6 +9,7 @@ import { Modal } from "@/components/ui/modal";
 import { Field, Select, TextInput } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { num } from "@/lib/utils";
+import { HrKpiDefinitionTable } from "@/components/kpi/hr-kpi-definition-table";
 
 export default function KpiConfigPage() {
   const objectives = useStore((s) => s.objectives);
@@ -20,7 +21,7 @@ export default function KpiConfigPage() {
   const createKra = useStore((s) => s.createKra);
   const { push } = useToast();
 
-  const [tab, setTab] = useState("OBJECTIVES");
+  const [tab, setTab] = useState("DEFINITIONS");
   const [objOpen, setObjOpen] = useState(false);
   const [kraOpen, setKraOpen] = useState(false);
   const [obj, setObj] = useState({ name: "", perspective: "Financial" });
@@ -31,13 +32,16 @@ export default function KpiConfigPage() {
       <PageHeader title="KPI Configuration" subtitle="Objectives, KRAs, KPI catalogue and targets used in the performance module." />
 
       <div className="mb-4"><Tabs tabs={[
+        { id: "DEFINITIONS", label: "KPI Definitions" },
         { id: "OBJECTIVES", label: "Objectives", count: objectives.length },
         { id: "KRAS", label: "KRAs", count: kras.length },
         { id: "CATALOGUE", label: "KPI Catalogue", count: kpis.filter((k) => !k.deleted).length },
         { id: "TARGETS", label: "Targets", count: kpis.filter((k) => !k.deleted).length },
       ]} active={tab} onChange={setTab} /></div>
 
-      {tab === "OBJECTIVES" ? (
+      {tab === "DEFINITIONS" ? (
+        <HrKpiDefinitionTable />
+      ) : tab === "OBJECTIVES" ? (
         <>
           <div className="mb-4 flex justify-end"><button className="btn-primary btn-sm" onClick={() => setObjOpen(true)}><Plus className="h-3.5 w-3.5" /> Add Objective</button></div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

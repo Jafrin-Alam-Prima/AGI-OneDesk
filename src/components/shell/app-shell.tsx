@@ -15,7 +15,8 @@ const STAFF_ONLY: Role[] = ["DEPT_HEAD", "HR_ADMIN", "FINANCE_ADMIN", "AUDIT_ADM
 const STAFF_PREFIXES = ["/kpi-requests", "/approvals", "/leaderboard", "/recruitment", "/confirmation", "/transfers", "/separation", "/rewards", "/assets", "/grc", "/reports"];
 
 function isDenied(pathname: string, role: Role): boolean {
-  if (pathname.startsWith("/admin") && !ADMIN_ONLY.includes(role)) return true;
+  const kpiConfigHr = pathname.startsWith("/admin/kpi-config") && role === "HR_ADMIN";
+  if (pathname.startsWith("/admin") && !ADMIN_ONLY.includes(role) && !kpiConfigHr) return true;
   if (pathname === "/employees" && !ADMIN_ONLY.includes(role)) return true;
   if (STAFF_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/")) && !STAFF_ONLY.includes(role)) return true;
   return false;

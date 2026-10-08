@@ -104,7 +104,7 @@ export const NAV: NavGroup[] = [
     items: [
       { label: "Organisation", href: "/admin/organisation", icon: "Building2", roles: ADMIN },
       { label: "Employees & Roles", href: "/admin/employees", icon: "UserCog", roles: ADMIN },
-      { label: "KPI Configuration", href: "/admin/kpi-config", icon: "SlidersHorizontal", roles: ADMIN },
+      { label: "KPI Configuration", href: "/admin/kpi-config", icon: "SlidersHorizontal", roles: KPI_ADMIN_ROLES },
       { label: "Grade Bands", href: "/admin/grades", icon: "Layers", roles: ADMIN },
       { label: "Approval Pipelines", href: "/admin/pipelines", icon: "GitBranch", roles: ADMIN },
       { label: "Announcements", href: "/admin/announcements", icon: "Megaphone", roles: ADMIN },
