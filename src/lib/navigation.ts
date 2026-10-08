@@ -1,4 +1,4 @@
-import type { Role } from "./types";
+import type { Kpi, Role } from "./types";
 
 export interface NavItem {
   label: string;
@@ -23,6 +23,15 @@ export const KPI_ADMIN_ROLES: Role[] = ["HR_ADMIN", "SYS_ADMIN", "SUPER_ADMIN"];
 export function canEditKpiDefinition(role?: Role): boolean {
   return !!role && KPI_ADMIN_ROLES.includes(role);
 }
+
+/** KPI fields owned by HR — an employee must never persist these. */
+export const HR_KPI_FIELDS: (keyof Kpi)[] = [
+  "name", "objectiveId", "kpiType", "uom", "direction", "srf", "weight", "bscPerspective", "perspective", "pmType",
+];
+/** KPI fields an employee owns (achievement entry). */
+export const EMPLOYEE_KPI_FIELDS: (keyof Kpi)[] = [
+  "benchmark", "target", "actual", "evidenceLink", "dataSource", "kpiCharter", "kpiDriver",
+];
 
 export const NAV: NavGroup[] = [
   {

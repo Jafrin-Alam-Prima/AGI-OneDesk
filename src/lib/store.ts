@@ -14,6 +14,7 @@ import type {
 } from "./types";
 import { achievement, calculatedScore } from "./calc";
 import { uid } from "./utils";
+import { KPI_ADMIN_ROLES, HR_KPI_FIELDS, EMPLOYEE_KPI_FIELDS } from "./navigation";
 
 const now = () => new Date().toISOString();
 
@@ -37,6 +38,7 @@ interface Actions {
   issueSetupLink: (email: string) => SetupToken | null;
 
   /* kpi */
+  isKpiAdmin: (userId: string) => boolean;
   createKpi: (input: Partial<Kpi> & { ownerId: string; name: string }) => Kpi;
   updateKpi: (id: string, patch: Partial<Kpi>, reason?: string) => void;
   deleteKpi: (id: string, reason: string) => void;
@@ -124,6 +126,13 @@ function pushAudit(state: AppState, actorId: string, action: string, entity: str
   return { id: uid("au"), actorId, action, entity, entityId, detail, at: now() };
 }
 
+/** True when the given user holds a KPI-admin (HR) role — the only actors who may write HR-controlled KPI fields. */
+function isKpiAdminState(state: Pick<AppState, "users">, userId?: string): boolean {
+  if (!userId) return false;
+  const u = state.users.find((x) => x.id === userId);
+  return !!u && KPI_ADMIN_ROLES.includes(u.role);
+}
+
 export const useStore = create<Store>()(
   persist(
     (set, get) => ({
@@ -188,45 +197,56 @@ export const useStore = create<Store>()(
       /* -------- KPI -------- */
       createKpi: (input) => {
         const s = get();
+        const actor = s.session.userId ?? "";
+        const admin = isKpiAdminState(s, actor);
+        // Enforced in code: a non-admin actor may only create their own KPI, and HR-controlled fields are stripped.
+        const eff: Partial<Kpi> & { ownerId: string; name: string } = admin
+          ? input
+          : (() => {
+              const stripped: Record<string, unknown> = { ...input, ownerId: actor || input.ownerId };
+              for (const f of HR_KPI_FIELDS) delete stripped[f as string];
+              stripped.name = "";
+              return stripped as Partial<Kpi> & { ownerId: string; name: string };
+            })();
         const count = s.kpis.length + 1;
         const kpi: Kpi = {
           id: uid("kpi"),
-          code: `KPI-${input.periodYear ?? 2026}-${String(count).padStart(4, "0")}`,
-          ownerId: input.ownerId,
-          approverId: input.approverId || "",
-          objectiveId: input.objectiveId,
-          kraId: input.kraId,
-          name: input.name,
-          category: input.category ?? "PROJECT",
-          perspective: input.perspective ?? "Financial",
-          uom: input.uom ?? "BDT",
-          direction: input.direction ?? "HIGHER_BETTER",
-          srf: input.srf,
-          pmType: input.pmType,
-          bscPerspective: input.bscPerspective,
-          aggregationType: input.aggregationType,
-          kpiMeasurement: input.kpiMeasurement,
-          kpiFormat: input.kpiFormat,
-          targetFrequency: input.targetFrequency,
-          frequencyValue: input.frequencyValue,
-          evidenceLink: input.evidenceLink,
-          dataSource: input.dataSource,
-          kpiCharter: input.kpiCharter,
-          kpiDriver: input.kpiDriver,
-          showOnDashboard: input.showOnDashboard,
-          kpiType: input.kpiType,
-          weight: input.weight ?? 0,
-          benchmark: input.benchmark,
-          target: input.target ?? 0,
-          actual: input.actual ?? 0,
-          remarks: input.remarks ?? "",
-          periodYear: input.periodYear ?? 2026,
-          periodMonth: input.periodMonth ?? new Date().getMonth() + 1,
+          code: `KPI-${eff.periodYear ?? 2026}-${String(count).padStart(4, "0")}`,
+          ownerId: eff.ownerId,
+          approverId: eff.approverId || "",
+          objectiveId: eff.objectiveId,
+          kraId: eff.kraId,
+          name: eff.name,
+          category: eff.category ?? "PROJECT",
+          perspective: eff.perspective ?? "Financial",
+          uom: eff.uom ?? "BDT",
+          direction: eff.direction ?? "HIGHER_BETTER",
+          srf: eff.srf,
+          pmType: eff.pmType,
+          bscPerspective: eff.bscPerspective,
+          aggregationType: eff.aggregationType,
+          kpiMeasurement: eff.kpiMeasurement,
+          kpiFormat: eff.kpiFormat,
+          targetFrequency: eff.targetFrequency,
+          frequencyValue: eff.frequencyValue,
+          evidenceLink: eff.evidenceLink,
+          dataSource: eff.dataSource,
+          kpiCharter: eff.kpiCharter,
+          kpiDriver: eff.kpiDriver,
+          showOnDashboard: eff.showOnDashboard,
+          kpiType: eff.kpiType,
+          weight: eff.weight ?? 0,
+          benchmark: eff.benchmark,
+          target: eff.target ?? 0,
+          actual: eff.actual ?? 0,
+          remarks: eff.remarks ?? "",
+          periodYear: eff.periodYear ?? 2026,
+          periodMonth: eff.periodMonth ?? new Date().getMonth() + 1,
           status: "DRAFT",
           stage: "DEPT",
           createdAt: now(),
           updatedAt: now(),
-          createdBy: input.ownerId,
+          createdBy: eff.ownerId,
         };
         set((st) => ({
           kpis: [kpi, ...st.kpis],
@@ -237,27 +257,42 @@ export const useStore = create<Store>()(
         }));
         return kpi;
       },
+      isKpiAdmin: (userId) => isKpiAdminState(get(), userId),
       updateKpi: (id, patch, reason) => {
         set((s) => {
           const kpi = s.kpis.find((k) => k.id === id);
           if (!kpi) return s;
+          const actor = s.session.userId ?? "";
+          const admin = isKpiAdminState(s, actor);
+          // Enforce the HR/employee field rule in code (not just the UI).
+          let effPatch: Partial<Kpi> = patch;
+          if (!admin) {
+            if (actor !== kpi.ownerId) return s; // employees may only edit their own KPI
+            const allowed = new Set<string>(EMPLOYEE_KPI_FIELDS as string[]);
+            const filtered: Partial<Kpi> = {};
+            for (const key of Object.keys(patch) as (keyof Kpi)[]) {
+              if (allowed.has(String(key)) && patch[key] !== undefined) (filtered as Record<string, unknown>)[String(key)] = patch[key];
+            }
+            effPatch = filtered;
+          }
+          const effReason = admin ? (reason || "HR KPI configuration update") : "Employee KPI entry";
           const oldValues: Record<string, unknown> = {};
           const newValues: Record<string, unknown> = {};
           const changed: string[] = [];
-          (Object.keys(patch) as (keyof Kpi)[]).forEach((key) => {
-            if (patch[key] !== undefined && patch[key] !== kpi[key]) {
+          (Object.keys(effPatch) as (keyof Kpi)[]).forEach((key) => {
+            if (effPatch[key] !== undefined && effPatch[key] !== kpi[key]) {
               changed.push(String(key));
               oldValues[String(key)] = kpi[key];
-              newValues[String(key)] = patch[key];
+              newValues[String(key)] = effPatch[key];
             }
           });
           if (!changed.length) return s;
           const version: KpiVersion = {
             id: uid("ver"), kpiId: id, versionNo: s.kpiVersions.filter((v) => v.kpiId === id).length + 1,
-            changedFields: changed, oldValues, newValues, reason, changedBy: get().session.userId ?? kpi.ownerId, changedAt: now(),
+            changedFields: changed, oldValues, newValues, reason: effReason, changedBy: actor || kpi.ownerId, changedAt: now(),
           };
           return {
-            kpis: s.kpis.map((k) => (k.id === id ? { ...k, ...patch, updatedAt: now() } : k)),
+            kpis: s.kpis.map((k) => (k.id === id ? { ...k, ...effPatch, updatedAt: now() } : k)),
             kpiVersions: [...s.kpiVersions, version],
             auditLogs: [pushAudit(s, version.changedBy, "KPI_UPDATED", "Kpi", id, `Updated ${changed.join(", ")}`), ...s.auditLogs],
           };
@@ -287,11 +322,24 @@ export const useStore = create<Store>()(
         const s = get();
         const kpi = s.kpis.find((k) => k.id === id);
         if (!kpi) return;
+        const actor = s.session.userId ?? "";
+        const admin = isKpiAdminState(s, actor);
+        // Same code-level enforcement: employees may only update their own KPI and only employee fields.
+        let effPatch: Partial<Kpi> = patch;
+        if (!admin) {
+          if (actor !== kpi.ownerId) return;
+          const allowed = new Set<string>(EMPLOYEE_KPI_FIELDS as string[]);
+          const filtered: Partial<Kpi> = {};
+          for (const key of Object.keys(patch) as (keyof Kpi)[]) {
+            if (allowed.has(String(key)) && patch[key] !== undefined) (filtered as Record<string, unknown>)[String(key)] = patch[key];
+          }
+          effPatch = filtered;
+        }
         set((st) => ({
-          kpis: st.kpis.map((k) => (k.id === id ? { ...k, ...patch, status: "SUBMITTED", stage: "DEPT", updatedAt: now() } : k)),
-          kpiVersions: [...st.kpiVersions, { id: uid("ver"), kpiId: id, versionNo: st.kpiVersions.filter((v) => v.kpiId === id).length + 1, changedFields: [...Object.keys(patch), "status"], oldValues: { status: kpi.status }, newValues: { ...patch, status: "SUBMITTED" }, reason: "Resubmitted after correction", changedBy: kpi.ownerId, changedAt: now() }],
+          kpis: st.kpis.map((k) => (k.id === id ? { ...k, ...effPatch, status: "SUBMITTED", stage: "DEPT", updatedAt: now() } : k)),
+          kpiVersions: [...st.kpiVersions, { id: uid("ver"), kpiId: id, versionNo: st.kpiVersions.filter((v) => v.kpiId === id).length + 1, changedFields: [...Object.keys(effPatch), "status"], oldValues: { status: kpi.status }, newValues: { ...effPatch, status: "SUBMITTED" }, reason: "Resubmitted after correction", changedBy: actor || kpi.ownerId, changedAt: now() }],
           notifications: [...st.notifications, { id: uid("nt"), userId: kpi.approverId, title: "KPI resubmitted", body: `${kpi.name} was corrected and resubmitted.`, link: "/kpi-requests", read: false, at: now() }],
-          auditLogs: [pushAudit(st, kpi.ownerId, "KPI_RESUBMITTED", "Kpi", id, `Resubmitted ${kpi.name}`), ...st.auditLogs],
+          auditLogs: [pushAudit(st, actor || kpi.ownerId, "KPI_RESUBMITTED", "Kpi", id, `Resubmitted ${kpi.name}`), ...st.auditLogs],
         }));
       },
       decideKpi: (id, decision, reason) => {
