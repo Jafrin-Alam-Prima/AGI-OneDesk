@@ -364,3 +364,12 @@ The BRD's KPI module is the **performance core** of AGI OneDesk. In AGI OneDesk 
 - adopt **Anwar Group** branding, terminology, sample org (10 BUs, departments, sample employees), and **BDT/BD** locale;
 - support the **Variable Income KPI** scoring model from the spreadsheet (weightage × capped achievement → grade) as an *additional* calculation profile (see `variable-kpi-functionality.md`);
 - sit inside a PeopleDesk-style shell so it feels like one product, not a standalone app.
+
+## Addendum - Phase 2-6 alignment (2026-10-08)
+
+- KPI configuration is HR-controlled. HR authors full KPI definitions individually (`/admin/kpi-config` -> KPI Definitions) or by CSV (`/my-kpi/bulk`, HR mode). HR-owned fields: BSC, Objective, KPI, KPI Type (Variable/Non-Variable), UOM, KPI Direction (Max/Min), SRF, Weight.
+- Employees only enter Benchmark, Target, Achievement, Evidence Data Link, Data Source, KPI Charter, KPI Driver. Progress/Score/Status are system-calculated.
+- Permissions are enforced in code (`HR_KPI_FIELDS` / `EMPLOYEE_KPI_FIELDS`, `isKpiAdmin`) - an employee cannot persist an HR field even by calling the store directly.
+- The six-step traceable flow is unchanged; status gating locks entry once supervisor-approved.
+- Variable Income is the consequence of Variable KPIs; the scorecard lives inside My KPI and is summarised in Performance (no standalone module).
+- AI (BRD section 9), simulated with human-in-the-loop: Attrition Prediction, Resume Screening, Sentiment Analysis, plus AI Governance (explainability + governance). HR chatbot and skill-gap are out of the scoped demo.

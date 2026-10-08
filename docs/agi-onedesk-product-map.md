@@ -298,3 +298,11 @@ ESS Console  →  (admin view of employee self-service)
 8. Reports + audit + versions.
 9. Administration (RBAC, menus, pipeline, config) + remaining modules (asset, task, cafeteria, helpdesk, GRC, comms).
 10. Polish, responsiveness, accessibility, export, empty states.
+
+## Addendum - navigation and new modules (2026-10-08)
+
+- Sidebar: secondary/half-built modules (Helpdesk, Tasks, Assets, Cafeteria, GRC, Confirmation, Transfer & Promotion, Separation, Rewards, Contact Book, Templates) moved under a collapsed "More".
+- Removed standalone Variable Income from the sidebar - it is a segmented view inside My KPI (KPI Scorecard | Variable Income).
+- Added Insights -> Attrition (AI) at `/insights/attrition`, and Administration -> AI Governance at `/admin/ai-governance`.
+- Topbar Demo role switcher: Employee -> Dept Head -> HR -> System/Super without logging out.
+- KPI surfaces: `/my-kpi/create` (HR definition), `/my-kpi/bulk` (HR/Employee CSV), `/my-kpi` -> Input KPI (employee entry grid).

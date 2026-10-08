@@ -295,6 +295,24 @@ for (const p of predefinedByHr) {
   }));
 }
 
+/* KPIs created through the HR surfaces (Phase 6 demo) — awaiting employee input */
+kpis.push(mkKpi({
+  id: "kpi-hrdef", ownerId: "u13", approverId: "u6",
+  name: "Vendor Spend Reduction", objectiveId: "obj1", kraId: "kra2",
+  perspective: "Financial", bscPerspective: "Financial", uom: "%", direction: "HIGHER_BETTER",
+  srf: "Monthly", weight: 15, kpiType: "VARIABLE", pmType: "BSC",
+  target: 0, actual: 0, status: "SUBMITTED", periodMonth: 10, periodYear: 2026,
+  remarks: "Created by HR via KPI Configuration → KPI Definitions.",
+}));
+kpis.push(mkKpi({
+  id: "kpi-csvup", ownerId: "u14", approverId: "u6",
+  name: "Reporting Automation Uptime", objectiveId: "obj3", kraId: "kra5",
+  perspective: "Internal Process", bscPerspective: "Internal Process", uom: "%", direction: "HIGHER_BETTER",
+  srf: "Monthly", weight: 10, kpiType: "NON_VARIABLE", pmType: "BSC",
+  target: 0, actual: 0, status: "SUBMITTED", periodMonth: 10, periodYear: 2026,
+  remarks: "Imported by HR via Bulk KPI Upload (CSV).",
+}));
+
 /* ---------------- Evidence / versions / decisions (reference KPIs) ---------------- */
 import type { EvidenceFile } from "./types";
 const evidence: EvidenceFile[] = [];
@@ -453,6 +471,10 @@ const serviceRequests = [
 ];
 const grievances = [
   { id: "gr1", userId: "u22", category: "Workplace", description: "Seating arrangement in the HR wing needs review.", status: "IN_REVIEW" as const, createdAt: NOW },
+  { id: "gr2", userId: "u13", category: "Compensation", description: "My salary increment was not processed this cycle and there is a long delay. This feels unfair.", status: "OPEN" as const, createdAt: NOW },
+  { id: "gr3", userId: "u18", category: "Management", description: "The team lead was supportive and resolved my concern quickly. Thank you.", status: "RESOLVED" as const, createdAt: NOW, resolution: "Acknowledged by HR." },
+  { id: "gr4", userId: "u20", category: "Attendance", description: "Repeated late shift changes are causing stress and there is no response from my manager.", status: "IN_REVIEW" as const, createdAt: NOW },
+  { id: "gr5", userId: "u24", category: "Policy", description: "Request clarity on the work-from-home policy.", status: "OPEN" as const, createdAt: NOW },
 ];
 
 /* ---------------- Comms / docs ---------------- */

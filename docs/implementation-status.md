@@ -98,3 +98,23 @@ Build: `npm run build` ✓ (all routes compile). Runtime sweep: all 50+ routes r
 ## F. Simulated (by design)
 
 Auth, payroll processing, statutory reports, notifications backend, evidence byte storage, external ERP — all simulated with real UX. See `implementation-notes.md`.
+
+## G. Addendum - Phases 2-6 (2026-10-08)
+
+| Feature | Route | Status | Notes |
+|---|---|---|---|
+| HR-controlled KPI definitions (grid) | `/admin/kpi-config` -> KPI Definitions | VERIFIED | Select Employee, PM Type, Year, From/To Month. Columns SL, BSC, Objective, KPI, KPI Type, UOM, Direction (Max/Min), SRF, Weight. Save -> createKpi + submitKpi. HR_ADMIN can open KPI Configuration. |
+| Bulk KPI upload (2 modes) | `/my-kpi/bulk` | VERIFIED | HR KPI definition (HR-only columns) vs Employee achievement (owner-scoped). Template per mode; create/update/error preview. |
+| Employee "Input KPI" grid | `/my-kpi` -> Input KPI (n) | VERIFIED | HR fields pre-filled and locked; employee fields editable; Save. |
+| Status gating | `/my-kpi`, `/my-kpi/[id]` | VERIFIED | Inputs + Save disabled when approved / not released. |
+| Field permissions enforced in code | `store.ts` | VERIFIED | Employee cannot persist any HR field even via direct store calls; HR can. |
+| Variable Income merged into My KPI | `/my-kpi` (segmented), `/performance` | VERIFIED | No sidebar item; `/variable-income` redirects; Performance shows VI total + grade. |
+| Demo role switcher | topbar | VERIFIED | Employee -> Dept Head -> HR -> System/Super without logout. |
+| Sidebar "More" grouping | shell | VERIFIED | Secondary/half-built modules collapsed. |
+| AI - Attrition | `/insights/attrition` | VERIFIED | Risk + top factors + Why + Flag / 1:1 (human-in-the-loop). |
+| AI - Resume screening | `/recruitment` | VERIFIED | JD -> match %, matched/missing skills, Shortlist. |
+| AI - Sentiment | `/grievances` | VERIFIED | Per-grievance sentiment + themes + HR summary. |
+| AI - Governance | `/admin/ai-governance` | VERIFIED | Fairness thresholds, monitoring, feedback capture (admin-only). |
+
+HR fields: name, objectiveId, kpiType, uom, direction, srf, weight, bscPerspective, perspective, pmType. Employee fields: benchmark, target, actual, evidenceLink, dataSource, kpiCharter, kpiDriver.
+Demo data: u12 has Variable + Non-Variable KPIs (HR fields set, employee fields blank, awaiting input) plus an already-approved KPI for gating; HR-created and CSV-uploaded KPIs for other employees; extra grievances for sentiment. Persist key: `agi-onedesk-v8`.
