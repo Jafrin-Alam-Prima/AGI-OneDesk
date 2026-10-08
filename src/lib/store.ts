@@ -10,7 +10,7 @@ import type {
   MealBooking, MovementApplication, Notification, Objective, PolicyDoc, ReviewDecision,
   RewardRecord, RiskItem, SeparationRequest, ServiceRequest, TaskItem, TrainingEnrollment,
   TrainingProgram, TransferRequest, User, VariableIncomeRecord, PayslipRecord, HelpdeskTicket,
-  SetupToken,
+  SetupToken, Shift, Holiday, OvertimeRequest, AttendanceRecord,
 } from "./types";
 import { achievement, calculatedScore } from "./calc";
 import { uid } from "./utils";
@@ -64,6 +64,14 @@ interface Actions {
   decideMovement: (id: string, status: "APPROVED" | "REJECTED", note: string) => void;
   requestRegularization: (input: Omit<import("./types").RegularizationRequest, "id" | "status" | "createdAt">) => void;
   decideRegularization: (id: string, status: "APPROVED" | "REJECTED", note: string) => void;
+  requestOvertime: (input: Omit<OvertimeRequest, "id" | "status" | "createdAt">) => void;
+  decideOvertime: (id: string, status: "APPROVED" | "REJECTED", note?: string) => void;
+  createShift: (input: Omit<Shift, "id">) => void;
+  updateShift: (id: string, patch: Partial<Shift>) => void;
+  deleteShift: (id: string) => void;
+  addHoliday: (input: Omit<Holiday, "id">) => void;
+  removeHoliday: (id: string) => void;
+  toggleAttendanceLock: (monthKey: string) => void;
   applyLoan: (input: Omit<LoanRequest, "id" | "status" | "createdAt">) => void;
   decideLoan: (id: string, status: "APPROVED" | "REJECTED", note: string) => void;
   applyIou: (input: Omit<IouRequest, "id" | "status" | "createdAt">) => void;
@@ -71,7 +79,7 @@ interface Actions {
   claimExpense: (input: Omit<ExpenseClaim, "id" | "status" | "createdAt">) => void;
   decideExpense: (id: string, status: "APPROVED" | "REJECTED", note: string) => void;
   updateProfile: (userId: string, patch: Partial<User>) => void;
-  clockPunch: (userId: string, kind: "IN" | "OUT") => void;
+  clockPunch: (userId: string, kind: "IN" | "OUT", mode?: "OFFICE" | "REMOTE" | "FIELD") => void;
 
   /* requests */
   createServiceRequest: (input: Omit<ServiceRequest, "id" | "status" | "createdAt">) => void;
@@ -442,6 +450,37 @@ export const useStore = create<Store>()(
           regularizations: s.regularizations.map((r) => (r.id === id ? { ...r, status, decisionNote: note } : r)),
           auditLogs: [pushAudit(s, s.session.userId ?? "", `REGULARIZATION_${status}`, "Regularization", id, note), ...s.auditLogs],
         })),
+      requestOvertime: (input) =>
+        set((s) => ({
+          overtimeRequests: [{ ...input, id: uid("ot"), status: "PENDING", createdAt: now() }, ...s.overtimeRequests],
+          notifications: input.approverId
+            ? [...s.notifications, { id: uid("nt"), userId: input.approverId, title: "New overtime request", body: `${input.hours}h overtime on ${input.date} awaiting approval.`, link: "/attendance", read: false, at: now() }]
+            : s.notifications,
+          auditLogs: [pushAudit(s, input.userId, "OVERTIME_REQUESTED", "Overtime", input.userId, `${input.hours}h on ${input.date}`), ...s.auditLogs],
+        })),
+      decideOvertime: (id, status, note) =>
+        set((s) => {
+          const ot = s.overtimeRequests.find((o) => o.id === id);
+          return {
+            overtimeRequests: s.overtimeRequests.map((o) => (o.id === id ? { ...o, status, decisionNote: note } : o)),
+            notifications: ot
+              ? [...s.notifications, { id: uid("nt"), userId: ot.userId, title: `Overtime ${status.toLowerCase()}`, body: note || `Your overtime request was ${status.toLowerCase()}.`, link: "/attendance", read: false, at: now() }]
+              : s.notifications,
+            auditLogs: [pushAudit(s, s.session.userId ?? "", `OVERTIME_${status}`, "Overtime", id, note || status), ...s.auditLogs],
+          };
+        }),
+      createShift: (input) => set((s) => ({ shifts: [...s.shifts, { ...input, id: uid("sh") }], auditLogs: [pushAudit(s, s.session.userId ?? "", "SHIFT_CREATED", "Shift", input.name, input.name), ...s.auditLogs] })),
+      updateShift: (id, patch) => set((s) => ({ shifts: s.shifts.map((sh) => (sh.id === id ? { ...sh, ...patch } : sh)), auditLogs: [pushAudit(s, s.session.userId ?? "", "SHIFT_UPDATED", "Shift", id, "Updated shift"), ...s.auditLogs] })),
+      deleteShift: (id) => set((s) => ({ shifts: s.shifts.filter((sh) => sh.id !== id), auditLogs: [pushAudit(s, s.session.userId ?? "", "SHIFT_DELETED", "Shift", id, "Deleted shift"), ...s.auditLogs] })),
+      addHoliday: (input) => set((s) => ({ holidays: [...s.holidays, { ...input, id: uid("hol") }].sort((a, b) => a.date.localeCompare(b.date)), auditLogs: [pushAudit(s, s.session.userId ?? "", "HOLIDAY_ADDED", "Holiday", input.date, input.name), ...s.auditLogs] })),
+      removeHoliday: (id) => set((s) => ({ holidays: s.holidays.filter((h) => h.id !== id), auditLogs: [pushAudit(s, s.session.userId ?? "", "HOLIDAY_REMOVED", "Holiday", id, "Removed holiday"), ...s.auditLogs] })),
+      toggleAttendanceLock: (monthKey) => set((s) => {
+        const locked = s.attendanceLocks.includes(monthKey);
+        return {
+          attendanceLocks: locked ? s.attendanceLocks.filter((m) => m !== monthKey) : [...s.attendanceLocks, monthKey],
+          auditLogs: [pushAudit(s, s.session.userId ?? "", locked ? "PERIOD_REOPENED" : "PERIOD_CLOSED", "Attendance", monthKey, monthKey), ...s.auditLogs],
+        };
+      }),
       applyLoan: (input) =>
         set((s) => ({ loans: [{ ...input, id: uid("ln"), status: "PENDING", createdAt: now() }, ...s.loans], notifications: [...s.notifications, { id: uid("nt"), userId: input.approverId ?? "", title: "New loan request", body: `Loan request awaiting approval.`, link: "/approvals", read: false, at: now() }], auditLogs: [pushAudit(s, input.userId, "LOAN_APPLIED", "Loan", input.userId, input.reason), ...s.auditLogs] })),
       decideLoan: (id, status, note) =>
@@ -455,20 +494,30 @@ export const useStore = create<Store>()(
       decideExpense: (id, status, note) =>
         set((s) => ({ expenses: s.expenses.map((e) => (e.id === id ? { ...e, status, decisionNote: note } : e)), auditLogs: [pushAudit(s, s.session.userId ?? "", `EXPENSE_${status}`, "Expense", id, note), ...s.auditLogs] })),
       updateProfile: (userId, patch) => set((s) => ({ users: s.users.map((u) => (u.id === userId ? { ...u, ...patch } : u)), auditLogs: [pushAudit(s, userId, "PROFILE_UPDATED", "User", userId, "Updated profile"), ...s.auditLogs] })),
-      clockPunch: (userId, kind) => {
+      clockPunch: (userId, kind, mode = "OFFICE") => {
         const date = new Date().toISOString().slice(0, 10);
         const time = new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+        const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
         set((s) => {
+          const shift = s.shifts[0];
+          const startMin = shift ? toMin(shift.start) : 540;
+          const lateMinutes = Math.max(0, toMin(time) - (startMin + (shift?.graceMin ?? 15)));
+          const status: AttendanceRecord["status"] = lateMinutes > 0 ? "LATE" : "PRESENT";
           const existing = s.attendance.find((a) => a.userId === userId && a.date === date);
           if (existing) {
+            const inTime = kind === "IN" ? time : existing.inTime;
+            const outTime = kind === "OUT" ? time : existing.outTime;
+            const workedHours = inTime && outTime ? Math.max(0, Math.round(((toMin(outTime) - toMin(inTime)) / 60) * 10) / 10) : existing.workedHours;
             return {
-              attendance: s.attendance.map((a) => (a.id === existing.id ? { ...a, inTime: kind === "IN" ? time : a.inTime, outTime: kind === "OUT" ? time : a.outTime, status: "PRESENT" } : a)),
-              auditLogs: [pushAudit(s, userId, kind === "IN" ? "CLOCK_IN" : "CLOCK_OUT", "Attendance", userId, `${kind} at ${time}`), ...s.auditLogs],
+              attendance: s.attendance.map((a) => (a.id === existing.id
+                ? { ...a, inTime, outTime, mode, workedHours, lateMinutes: kind === "IN" ? lateMinutes : a.lateMinutes, status: inTime && outTime ? "PRESENT" : kind === "IN" ? status : a.status }
+                : a)),
+              auditLogs: [pushAudit(s, userId, kind === "IN" ? "CLOCK_IN" : "CLOCK_OUT", "Attendance", userId, `${kind} at ${time} · ${mode}`), ...s.auditLogs],
             };
           }
           return {
-            attendance: [{ id: uid("att"), userId, date, inTime: kind === "IN" ? time : undefined, outTime: kind === "OUT" ? time : undefined, status: "PRESENT", shift: "General 09:00-18:00" }, ...s.attendance],
-            auditLogs: [pushAudit(s, userId, kind === "IN" ? "CLOCK_IN" : "CLOCK_OUT", "Attendance", userId, `${kind} at ${time}`), ...s.auditLogs],
+            attendance: [{ id: uid("att"), userId, date, inTime: kind === "IN" ? time : undefined, outTime: kind === "OUT" ? time : undefined, status, shift: shift ? `${shift.name} ${shift.start}-${shift.end}` : "General 09:00-18:00", shiftId: shift?.id, mode, lateMinutes }, ...s.attendance],
+            auditLogs: [pushAudit(s, userId, kind === "IN" ? "CLOCK_IN" : "CLOCK_OUT", "Attendance", userId, `${kind} at ${time} · ${mode}`), ...s.auditLogs],
           };
         });
       },
@@ -530,7 +579,7 @@ export const useStore = create<Store>()(
       audit: (action, entity, entityId, detail) => set((s) => ({ auditLogs: [pushAudit(s, s.session.userId ?? "", action, entity, entityId, detail), ...s.auditLogs] })),
     }),
     {
-      name: "agi-onedesk-v8",
+      name: "agi-onedesk-v9",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => {
         const data: Record<string, unknown> = {};

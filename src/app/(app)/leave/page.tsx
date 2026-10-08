@@ -57,7 +57,7 @@ export default function LeavePage() {
 
   return (
     <div>
-      <PageHeader title="Leave & Absence" subtitle="Apply for leave, track balances and approvals." action={<button className="btn-primary" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Apply Leave</button>} />
+      <PageHeader title="Leave" subtitle="Apply for leave, track balances and approvals." action={<button className="btn-primary" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Apply Leave</button>} />
 
       <div className="mb-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {myBalances.slice(0, 4).map((b) => {

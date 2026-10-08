@@ -197,8 +197,41 @@ export interface AttendanceRecord {
   date: string; // yyyy-mm-dd
   inTime?: string;
   outTime?: string;
-  status: "PRESENT" | "ABSENT" | "LATE" | "LEAVE" | "MOVEMENT" | "OFFDAY" | "HOLIDAY";
+  status: "PRESENT" | "ABSENT" | "LATE" | "LEAVE" | "MOVEMENT" | "OFFDAY" | "HOLIDAY" | "HALF_DAY";
   shift?: string;
+  shiftId?: string;
+  workedHours?: number;
+  lateMinutes?: number;
+  mode?: "OFFICE" | "REMOTE" | "FIELD";
+  remark?: string;
+}
+
+export interface Shift {
+  id: string;
+  name: string;
+  start: string; // HH:MM
+  end: string; // HH:MM
+  graceMin: number;
+  halfDayAfterMin: number;
+  weekOffDays: number[]; // 0 Sun .. 6 Sat
+}
+
+export interface Holiday {
+  id: string;
+  date: string; // yyyy-mm-dd
+  name: string;
+}
+
+export interface OvertimeRequest {
+  id: string;
+  userId: string;
+  date: string;
+  hours: number;
+  reason: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  approverId?: string;
+  decisionNote?: string;
+  createdAt: string;
 }
 
 export interface RegularizationRequest {
@@ -541,6 +574,10 @@ export interface AppState {
   variableIncome: VariableIncomeRecord[];
   attendance: AttendanceRecord[];
   regularizations: RegularizationRequest[];
+  shifts: Shift[];
+  holidays: Holiday[];
+  overtimeRequests: OvertimeRequest[];
+  attendanceLocks: string[]; // "YYYY-MM" periods that are closed
   leaveTypes: LeaveType[];
   leaveBalances: LeaveBalance[];
   leaveApplications: LeaveApplication[];

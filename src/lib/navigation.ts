@@ -56,7 +56,7 @@ export const NAV: NavGroup[] = [
     items: [
       { label: "Attendance", href: "/attendance", icon: "CalendarCheck", roles: ALL },
       {
-        label: "Leave & Movement", icon: "PlaneTakeoff", roles: ALL,
+        label: "Time Off & Movement", icon: "PlaneTakeoff", roles: ALL,
         children: [
           { label: "Leave", href: "/leave" },
           { label: "Movement", href: "/movement" },

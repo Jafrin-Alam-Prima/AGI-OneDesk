@@ -1,9 +1,9 @@
 import type {
   AppState, AttendanceRecord, AuditLog, BusinessUnit, Department, Grade, Kpi,
   KpiVersion, LeaveApplication, LeaveBalance, Notification, Objective, Kra,
-  ReviewDecision, User, VariableIncomeRecord, PayslipRecord,
+  ReviewDecision, User, VariableIncomeRecord, PayslipRecord, Shift, Holiday, OvertimeRequest,
 } from "./types";
-import { colorFor } from "./utils";
+import { colorFor, todayISO } from "./utils";
 
 const NOW = "2026-10-06T09:00:00.000Z";
 
@@ -387,26 +387,77 @@ const variableIncome: VariableIncomeRecord[] = [
   },
 ];
 
-/* ---------------- Attendance & leave ---------------- */
-const attendance: AttendanceRecord[] = [];
-const shift = "General 09:00-18:00";
-for (let day = 1; day <= 5; day++) {
-  for (const u of users.filter((x) => x.role === "EMPLOYEE" || x.role === "DEPT_HEAD")) {
+/* ---------------- Attendance, shifts, holidays ---------------- */
+const shifts: Shift[] = [
+  { id: "sh1", name: "General", start: "09:00", end: "18:00", graceMin: 15, halfDayAfterMin: 240, weekOffDays: [5] },
+  { id: "sh2", name: "Morning", start: "07:00", end: "16:00", graceMin: 10, halfDayAfterMin: 240, weekOffDays: [5] },
+  { id: "sh3", name: "Night", start: "22:00", end: "07:00", graceMin: 15, halfDayAfterMin: 240, weekOffDays: [5] },
+];
+const holidays: Holiday[] = [
+  { id: "hol1", date: "2026-10-20", name: "Durga Puja" },
+  { id: "hol2", date: "2026-10-21", name: "Durga Puja (Day 2)" },
+  { id: "hol3", date: "2026-10-24", name: "Company Foundation Day" },
+];
+const holidaySet = new Set(holidays.map((h) => h.date));
+
+const trackable = users.filter((u) => u.role === "EMPLOYEE" || u.role === "DEPT_HEAD");
+
+function timesFor(status: AttendanceRecord["status"]): Partial<AttendanceRecord> {
+  if (status === "PRESENT") return { inTime: "08:57", outTime: "18:05", workedHours: 9.1, mode: "OFFICE" };
+  if (status === "LATE") return { inTime: "09:41", outTime: "18:10", workedHours: 8.5, lateMinutes: 41, mode: "OFFICE" };
+  if (status === "HALF_DAY") return { inTime: "09:02", outTime: "13:05", workedHours: 4.1, mode: "OFFICE" };
+  if (status === "MOVEMENT") return { inTime: "09:05", outTime: "17:30", workedHours: 8.4, mode: "FIELD", remark: "Client visit (out-door duty)" };
+  if (status === "LEAVE") return { remark: "Approved leave" };
+  if (status === "ABSENT") return { remark: "No punch" };
+  return {};
+}
+
+const attMap = new Map<string, AttendanceRecord>();
+function setAtt(u: User, day: number, status: AttendanceRecord["status"], extra: Partial<AttendanceRecord> = {}) {
+  const date = `2026-10-${String(day).padStart(2, "0")}`;
+  attMap.set(`${u.id}_${day}`, { id: `att_${u.id}_${day}`, userId: u.id, date, status, shiftId: "sh1", shift: "General 09:00-18:00", ...timesFor(status), ...extra });
+}
+function weekdayStatus(u: User, day: number): AttendanceRecord["status"] {
+  const r = (u.id.length * 7 + day * 3) % 17;
+  if (r === 0) return "ABSENT";
+  if (r === 1 || r === 2) return "LATE";
+  if (r === 3) return "LEAVE";
+  if (r === 4) return "MOVEMENT";
+  if (r === 5) return "HALF_DAY";
+  return "PRESENT";
+}
+for (const u of trackable) {
+  for (let day = 1; day <= 31; day++) {
+    const date = `2026-10-${String(day).padStart(2, "0")}`;
     const dow = new Date(2026, 9, day).getDay();
-    if (dow === 5 || dow === 6) {
-      attendance.push({ id: `att_${u.id}_${day}`, userId: u.id, date: `2026-10-${String(day).padStart(2, "0")}`, status: dow === 5 ? "OFFDAY" : "HOLIDAY", shift });
-      continue;
-    }
-    const r = (u.id.length * day) % 10;
-    const status: AttendanceRecord["status"] = r === 0 ? "ABSENT" : r === 1 ? "LATE" : r === 2 ? "LEAVE" : "PRESENT";
-    attendance.push({
-      id: `att_${u.id}_${day}`, userId: u.id, date: `2026-10-${String(day).padStart(2, "0")}`,
-      inTime: status === "PRESENT" || status === "LATE" ? (status === "LATE" ? "09:41" : "08:57") : undefined,
-      outTime: status === "PRESENT" || status === "LATE" ? "18:05" : undefined,
-      status, shift,
-    });
+    if (holidaySet.has(date)) { setAtt(u, day, "HOLIDAY", { remark: holidays.find((h) => h.date === date)?.name }); continue; }
+    if (dow === 5) { setAtt(u, day, "OFFDAY"); continue; }
+    setAtt(u, day, weekdayStatus(u, day));
   }
 }
+// Reference employee u12 — a realistic full month
+const u12 = users.find((x) => x.id === "u12")!;
+const u12Overrides: Record<number, AttendanceRecord["status"]> = { 3: "LATE", 9: "ABSENT", 12: "LEAVE", 15: "MOVEMENT", 17: "LATE", 22: "HALF_DAY" };
+for (const [day, status] of Object.entries(u12Overrides)) setAtt(u12, Number(day), status);
+
+// Today — make the reference department board convincing
+const TODAY = todayISO();
+const todayDay = TODAY.startsWith("2026-10") ? Number(TODAY.slice(8, 10)) : 8;
+const todayMix: Record<string, AttendanceRecord["status"] | "NONE"> = { u13: "LATE", u14: "LATE", u15: "ABSENT", u16: "LEAVE", u17: "NONE", u18: "NONE" };
+setAtt(u12, todayDay, "PRESENT");
+for (const [uid, mix] of Object.entries(todayMix)) {
+  if (mix === "NONE") { attMap.delete(`${uid}_${todayDay}`); continue; }
+  setAtt(users.find((x) => x.id === uid)!, todayDay, mix, mix === "LATE"
+    ? { inTime: uid === "u14" ? "09:52" : "09:35", outTime: "18:15", workedHours: 8.6, lateMinutes: uid === "u14" ? 52 : 35, mode: uid === "u14" ? "REMOTE" : "OFFICE" }
+    : {});
+}
+const attendance: AttendanceRecord[] = [...attMap.values()];
+
+const overtimeRequests: OvertimeRequest[] = [
+  { id: "ot1", userId: "u12", date: "2026-10-03", hours: 3, reason: "Month-end reporting.", status: "APPROVED", approverId: "u6", decisionNote: "Approved.", createdAt: NOW },
+  { id: "ot2", userId: "u13", date: "2026-10-07", hours: 2, reason: "Dealer closing support.", status: "PENDING", approverId: "u6", createdAt: NOW },
+];
+const attendanceLocks: string[] = ["2026-09"];
 
 const leaveTypes = [
   { id: "lt1", name: "Casual Leave", yearlyQuota: 10 },
@@ -444,10 +495,16 @@ for (const u of users.filter((x) => x.role === "EMPLOYEE").slice(0, 12)) {
   });
 }
 
-const regularizations = [{
-  id: "reg1", userId: "u12", date: "2026-10-04", reason: "Forgot to punch out — was on client visit.",
-  status: "PENDING" as const, approverId: "u6", createdAt: NOW,
-}];
+const regularizations = [
+  {
+    id: "reg1", userId: "u12", date: "2026-10-04", reason: "Forgot to punch out — was on client visit.",
+    status: "PENDING" as const, approverId: "u6", createdAt: NOW,
+  },
+  {
+    id: "reg2", userId: "u14", date: "2026-10-07", reason: "System outage during check-in.",
+    status: "PENDING" as const, approverId: "u6", createdAt: NOW,
+  },
+];
 
 /* ---------------- Loans / IOU / expenses ---------------- */
 const loans = [
@@ -640,6 +697,10 @@ export function createSeedState(): AppState {
     variableIncome,
     attendance,
     regularizations,
+    shifts,
+    holidays,
+    overtimeRequests,
+    attendanceLocks,
     leaveTypes,
     leaveBalances,
     leaveApplications,
